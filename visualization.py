@@ -2,9 +2,8 @@
 import sys
 import Image, ImageDraw, ImageFont
 from collections import OrderedDict
-from math import sqrt
 import operator
-
+import scipy
 def extract(gene,infile):#extract splicevariant, subexon info for one gene
     array=[]
     for line in infile:
@@ -16,7 +15,7 @@ def extract(gene,infile):#extract splicevariant, subexon info for one gene
 def extractmap(gene,infile):#extract mappingout info for one gene
     array=[]
     for line in infile:
-        if line.split('\t')[1]==gene:
+        if line.split('\t')[0]==gene:
             array.append(line[:-1].split('\t'));
 
     return array  
@@ -118,44 +117,13 @@ def drawxy(ymax):#ymax is the maximum peptide ratio
         draw.text((300,y3),str(i),font=font,fill='black')
         draw.rectangle([350,y3,390,y3+10],fill='black',outline='black')
 
-def meanstdv(x):
-    n,mean,std=len(x),0,0
-    for a in x:
-        mean=mean+a
-    mean=mean/float(n)
-    if n>1:
-        for a in x:
-            std=std+(a-mean)**2
-        std=sqrt(std/float(n-1))
-
-    return mean,std
 
 def histogram(pep,cluster):
-    h0,h2,h6,h24=[],[],[],[]
-    h0r,h2r,h6r,h24r=[],[],[],[]
-    pattern=[]
     for i in range(0,len(array2)):
-        if array2[i][2].upper()==pep and int(array2[i][6])==cluster:
-            pepratio=array2[i][7].split(',')
-            h0.append(float(pepratio[0]))
-            h0r.append(float(pepratio[1]))
-            h2.append(float(pepratio[2]))
-            h2r.append(float(pepratio[3]))
-            h6.append(float(pepratio[4]))
-            h6r.append(float(pepratio[5]))
-            h24.append(float(pepratio[6]))
-            h24r.append(float(pepratio[7]))
-
-    #pattern=[(h0mean,h0std),(h0rmean,h0rstd),...]
-    pattern.append(meanstdv(h0)) 
-    pattern.append(meanstdv(h0r))
-    pattern.append(meanstdv(h2))
-    pattern.append(meanstdv(h2r))
-    pattern.append(meanstdv(h6))
-    pattern.append(meanstdv(h6r))
-    pattern.append(meanstdv(h24))
-    pattern.append(meanstdv(h24r))
-        
+        if array2[i][1]==pep:
+            a=[array2[i][5].split(','),array2[i][7].split(',')]
+            b=scipy.array(a,dtype=float)
+            pattern=scipy.transpose(b)
     if cluster!=0:
         color=getcolor(cluster,uniq_cluster,colorlist)
     else:
@@ -198,11 +166,12 @@ quanti=[]
 
 for i in range(0,len(array2)):
     var_cluster.append(int(array2[i][6])); #get a list of clusterred result 
-    quanti.append(max(array2[i][7].split(',')))
+    quanti.append(max(array2[i][5].split(',')))
 
 
 start=400
 height=50
+
 uniq_cluster=list(set(var_cluster)) #get the unique cluster, used for color setting
 ymax=int(float(max(quanti)))+1
 print len(uniq_cluster),uniq_cluster,ymax
@@ -216,9 +185,9 @@ for i in range(0,len(uniq_cluster)):
     psm=[]
     for i in range(0,len(array2)):
         if int(array2[i][6])==clus:
-            psm.append(array2[i][2].upper())
+            psm.append(array2[i][1])
 
-    countuniqpep=len(list(set(psm)))
+    countuniqpep=len(psm)
     #print countuniqpep
     uniqcount.append(countuniqpep)
 
@@ -359,7 +328,7 @@ for i in range(0,len(array2)):  #draw peptides for each cluster
     k1=uniq_cluster.index(int(array2[i][6]))
     y2=bottom+60*k1
     draw.rectangle([start+stx1,y2,start+stx2,y2+10],fill=color,outline=color)
-    pepNO=array2[i][4]
+    pepNO=array2[i][2]
     draw.text((start+stx1,y2+10),pepNO,font=font2,fill='black')
     if int(array2[i][10])==1 and int(array2[i][9])>1:
         k2=var.index(array2[i][11])
@@ -378,8 +347,8 @@ for i in range(0,len(uniq_cluster)):
     cluster_psm={}
     for i in range(0,len(array2)):
         if int(array2[i][6])==cluster:
-            pep=array2[i][2].upper()
-            cluster_psm[pep]=int(array2[i][4])
+            pep=array2[i][1]
+            cluster_psm[pep]=int(array2[i][2])
 
     uniqpep=sorted(cluster_psm.iteritems(), key=operator.itemgetter(1))
     for i in range(0,len(uniqpep)):

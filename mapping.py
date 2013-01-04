@@ -7,8 +7,8 @@ def getgene(infile): #get gene symbol list out of pqpq file
     lis=OrderedDict()
     infile.readline()
     for line in infile:
-        gene=line.split('\t')[1]
-        if ';' not in gene and gene not in lis:
+        gene=line.split('\t')[0]
+        if gene not in lis:
             lis[gene]=1
 
     return lis.keys();
@@ -21,13 +21,12 @@ def extractvar(gene,infile):#extract splicevariant info for one gene
 
     return array
 
-def extractpep(gene,infile):#extract all psm for one gene
+def extractpep(gene,infile):#extract all pep for one gene
     array=[]
     for line in infile:
-        if line.split('\t')[1]==gene:
-            array.append(line[:-2].split('\t')); #last field in the pqpqoutput is '1\x03\n',file written in mac.
-
-    return array    
+        if line.split('\t')[0]==gene:
+            array.append(line[:-1].split('\t')); 
+    return array  
 
 #######################Subexons structure############
 
@@ -142,8 +141,8 @@ def main():
     handle2.close()
 
     for j in range(0,len(array2)):
-        pqpq_cluster.append(int(array2[j][4]))
-        seq=array2[j][2].upper()
+        pqpq_cluster.append(int(array2[j][5]))
+        seq=array2[j][1]
         num=0 #count how many known variants the peptide mapped to
         MTV.append([])
         for i in range(0,len(var)):
@@ -209,15 +208,13 @@ def main():
     if 0 in uniq_cluster:
         uniq_cluster.remove(0) # 0 means unclustered peptides
     
-    
+        
     var_identified={} #store the ID of identified splice variants for this gene
+    psmsum=0
     for i in range(0,len(array2)):
-        pep=array2[i][2].upper()
-        intensity=array2[i][3].split(',')
-        foldchange=normalize(intensity)
-        plex7.append(foldchange[6])
-        plex8.append(foldchange[7])
-        pepratio=','.join(map(str,foldchange))
+        pep=array2[i][1]
+        psmsum+=int(array2[i][2])
+        pepratio=array2[i][3]
         s1=str(len(pep))
         s2=str(len(uniq_cluster))
         s3=str(len(var))
@@ -230,32 +227,31 @@ def main():
         if len(var)>1 and NOMV[i]==1:
             if s5 not in var_identified:
                 var_identified[s5]=1
-        
-        newstr="\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" % (pepratio,s2,s3,s4,s5,s6,s7,s8,s9)
 
-        array2[i].insert(3,s1)
         peplabel=str(uniqpep[pep])
-        array2[i].insert(4,peplabel)
+        line="%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" % (gene,pep,
+                peplabel,s1,array2[i][2],pepratio,array2[i][5],array2[i][4],
+                s2,s3,s4,s5,s6,s7,s8,s9)
 
-        line='\t'.join(array2[i])+newstr
+       
+        peplabel=str(uniqpep[pep])
+
         
         output_handle.write(line)
 
     n1=len(uniq_cluster)
     n2=len(var)    
-    n3=len(array2)
+    n3=psmsum
     n4=len(uniqpep)
     n5=len(var_identified)
-    n6=median(plex7)
-    n7=median(plex8)
     s10=','.join(var_identified.keys())
     exonlis=Exon_st+Exon_ed
     uniqexon=list(set(exonlis))
     exoncoverage=float(len(uniqexon))/Countexon(array1)
-    newline="%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%f\t%f\n"%(gene,str(n1),str(n2),
+    newline="%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n"%(gene,str(n1),str(n2),
                                                         str(n3),str(n4),
                                                         str(exoncoverage),
-                                                        str(n5),s10,n6,n7)
+                                                        str(n5),s10)
     
     output2_handle.write(newline)
 
@@ -263,7 +259,7 @@ def main():
 ##################map peptide sequence#############################
 if __name__=='__main__':
     prefix=sys.argv[1]
-    infilename=prefix+'_pqpqout.txt'
+    infilename=prefix+'_cluster.txt'
     input_file=open(infilename,'r')
     genelist=getgene(input_file)
     print 'there are',len(genelist),'genes in the file'
@@ -275,15 +271,15 @@ if __name__=='__main__':
     output2=prefix+'_genestatistics.txt'
     
     output_handle=open(output1,'w')
-    headline1=['protein acc','gene symbol','peptide sequence','peptide length',
-               'peptide label','peptide instensity','PQPQ cluster',
-               'peptide intensity ratio',
-               'detected variants NO.','known variants NO.','NOMV',
+    headline1=['gene symbol','peptide sequence','peptide label',
+               'peptide length','PSM count','foldchange','PQPQ cluster',
+               'standard_dev',
+               'detected clusters NO.','known variants NO.','NOMV',
                'known variants peptide is mapped to','chr_start','chr_end',
                'exon_start','exon_end']
     output_handle.write('%s\n'%('\t'.join(headline1)))
     output2_handle=open(output2,'w')
-    headline2=['gene symbol','detected variants NO.','known variants NO.',
+    headline2=['gene symbol','detected clusters NO.','known variants NO.',
                'PSM count','unique peptides','exon coverage','identified variants','variants ID']
     output2_handle.write('%s\n'%('\t'.join(headline2)))
 
@@ -295,7 +291,7 @@ if __name__=='__main__':
             notfounddict[line[:-1]]=1 #get a genelist that are not found in EVDB
 
     print 'mapping.....'  
-    for i in range(0,len(genelist)):
+    for i in range(0,20):
         gene=genelist[i]
         if gene in notfounddict:
             continue;

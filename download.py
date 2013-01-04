@@ -3,7 +3,7 @@ import urllib,urllib2
 from Bio import Entrez,SeqIO
 from collections import OrderedDict
 
-def getgene(infile): #get gene symbol list out of pqpq file 
+def getgene(infile): #get gene symbol list out of pepdata file 
     dic={}
     infile.readline()
     for line in infile:
@@ -36,12 +36,12 @@ def getvariant(infile): #get variant acc list out of splicevariant file
 
 #####################fetch splicing variants from EVDB for all genes########
 prefix=sys.argv[1]
-infilename=prefix+'_pqpqout.txt'
-pqpqfile=open(infilename,'r')
-genelist=getgene(pqpqfile).keys()
+infilename=prefix+'_pepdata.txt'
+pepdatafile=open(infilename,'r')
+genelist=getgene(pepdatafile).keys()
 print 'there are',len(genelist),'genes in total' #after discard PSMs mapped to multiple genes
 
-pqpqfile.close()
+pepdatafile.close()
 
 url='http://projects.insilico.us.com/SpliceMiner/Batch?';
 
@@ -56,13 +56,13 @@ print len(downloadgene),'genes exon structure stored locally'
 
 output_file2=open(subexonfile,'a')
 
-file3=open('gene_notfound.txt','r')
+#file3=open('gene_notfound.txt','r')
 notfounddict={}
-for line in file3:
-    if line!='' and line[:-1] not in notfounddict:
-        notfounddict[line[:-1]]=1 #get a genelist that are not found in EVDB
+#for line in file3:
+#    if line!='' and line[:-1] not in notfounddict:
+#        notfounddict[line[:-1]]=1 #get a genelist that are not found in EVDB
 
-file3.close()
+#file3.close()
 
 newgene=0
 
