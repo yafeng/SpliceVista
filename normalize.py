@@ -28,7 +28,7 @@ def getpep(array):
 def normalize(lis):
     normalized=[]
     for i in range(0,len(lis)):
-        normvalue=2*float(lis[i])/(float(lis[0])+float(lis[1]))
+        normvalue=float(lis[i])/(float(lis[0]))
         normalized.append(normvalue)
 
     return normalized
@@ -43,7 +43,7 @@ def main():
         foldchange=[]
         for j in range(0,len(genearray)):
             if genearray[j][2].upper()==pep:
-                pepsignal=genearray[j][3:11]
+                pepsignal=genearray[j][3:]
                 pepratio=normalize(pepsignal)
                 foldchange.append(pepratio)
 

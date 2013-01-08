@@ -29,7 +29,7 @@ First, you need to extract some data from the output file of database searching 
 Accession	peptide sequence		1	2	3	4	5	6	7	8
 ENSP00000342181 nSQDDYDEER      3638.974989     3573.00811      3754.7922       3734.386299     3359.112228     2412.318846     2468.562338     3162.3
 
-*NOTE* In the column 1-8, they are the intensity value from 8-plex iTRAQ labelling	
+*NOTE* In the column with sample tag 1-8, they are the intensity value from 8-plex iTRAQ labelling.(put the standard or control in the first place)	
 
 Here, we will use the A431_heavy_msout.txt file (a tab-delimited text file described as in step1) to illustrate the workflow.
 
@@ -47,22 +47,25 @@ Output: splicingvar.txt, subexon.txt, varseq.fa, gene_notfound.txt, var_notfound
 
 The output files splicingvar.txt and subexon.txt contain exon composition of each variant, both genomic and transcript coordinates. The gene_notfound.txt file contains gene symbol which is not found in the splicing variants database. The var_notfound.txt file contains mRNA accession id of splice variants that is not found in GenBank.
 
-Tip: if you have multiple sample files in one project, it is better to put all the files under one directory named by the project and use different sample names for each file. Because usually the majority of identified proteins does not differ so much among different samples, the script download.py first check if the splice variants of identified protein and the variant sequences have been downloaded so that it avoids downloading the data for same proteins multiple times.
+Tip: if you have multiple sample files in one project, it is better to put all the files under one directory named by the project and use different sample names for each file. Because usually there is a overlap of identified proteins among different samples, the script download.py first check if the splice variants of identified protein and the variant sequences have been downloaded so that it avoids downloading the data for same proteins multiple times. This step will take hours to download data from internet if there are thousands of genes.
 
 Step4: calculate the mean intensity ratio and standard deviation of PSMs for all peptide
-Most often a peptide is identified by multiple peptide spectra matchs. For each PSM, the intensity of each iTRAQ plex is normalized by the mean intensity of the first two plex using the following fomula:
-X(normalized)=intensity of X/0.5*(intensity of 1+intensity of 2), X=1,2,3...8
-Then for each peptide, calculate the mean of all PSMs' normalized intensity and the standard deviation
-Command: Python normalize.py heavy_pepdata.txt heavy_pepdata_nm.txt
+Most often a peptide is identified by multiple peptide spectra matchs. For each PSM, the intensity of each iTRAQ plex is normalized by the intensity of the standard or control using the following fomula:
+X(normalized)=intensity of X/intensity of 1, X=1,2,3...
+Then for each peptide, calculate the mean of all PSMs' relative intensity and the standard deviation
+Command: Python normalize.py heavy
+if PQPQ is not used to cluster peptides based on their quantitative patterns, all peptides will be assigned to cluster 0.
 
 Step5: Map peptides to its transcriptional position - mapping.py
-The script in this step uses output from step 1 and step 2 to map identified peptides to its transcriptional positions.
-Command: Python mapping.py sample 
-Output: sample_mappingout.txt, sample_genestatistic.txt
+The script in this step uses output from previous step to map identified peptides to its transcriptional positions.
+Command: Python mapping.py heavy 
+Output: heavy_mappingout.txt, heavy_genestatistic.txt
 
 The file mappingout.txt is PSM based format in which each row is one PSM. It will be used in the visualization part. The file Genestatistic.txt is gene based format in which each row is one gene. It is used to filter out genes of interest.
 
 Create figure - visualization.py The script is used to visualize the gene of interest. Given a gene symbol, it will generate a high quality picture with all important information described in the paper.
-Command: Python visualization.py sample genesymbol
+Command: Python visualization.py heavy EGFR
+Output:EGFR_pattern_heavy.png
 
 The gene symbol should be exactly the same as the one you see in the file genestatistic.txt
+
