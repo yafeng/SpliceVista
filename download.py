@@ -49,20 +49,20 @@ variantfile='splicingvar.txt'
 output_file1=open(variantfile,'a')
 
 subexonfile='subexon.txt'
-file1=open(subexonfile,'r')
+file1=open(subexonfile,'a')
 downloadgene=getdownloadgene(file1)
 print len(downloadgene),'genes exon structure stored locally'
 
 
 output_file2=open(subexonfile,'a')
 
-#file3=open('gene_notfound.txt','r')
+file3=open('gene_notfound.txt','w')
 notfounddict={}
-#for line in file3:
-#    if line!='' and line[:-1] not in notfounddict:
-#        notfounddict[line[:-1]]=1 #get a genelist that are not found in EVDB
+for line in file3:
+    if line!='' and line[:-1] not in notfounddict:
+        notfounddict[line[:-1]]=1 #get a genelist that are not found in EVDB
 
-#file3.close()
+file3.close()
 
 newgene=0
 
