@@ -8,7 +8,7 @@ def getgene(infile): #get gene symbol list out of pqpq file
     infile.readline()
     for line in infile:
         gene=line.split('\t')[0]
-        if gene not in lis:
+        if ";" not in gene and gene not in lis:
             lis[gene]=1
 
     return lis.keys();
@@ -291,13 +291,13 @@ if __name__=='__main__':
             notfounddict[line[:-1]]=1 #get a genelist that are not found in EVDB
 
     print 'mapping.....'  
-    for i in range(0,20):
+    for i in range(0,len(genelist)):
         gene=genelist[i]
         if gene in notfounddict:
             continue;
         else:
-            main()
             print gene,i
+            main()
                 
     print 'program finished'
     print output1,'saved'

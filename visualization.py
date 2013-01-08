@@ -163,10 +163,11 @@ handle2.close()
 
 var_cluster=[]
 quanti=[]
-
+pep_psmcount={}
 for i in range(0,len(array2)):
     var_cluster.append(int(array2[i][6])); #get a list of clusterred result 
     quanti.append(max(array2[i][5].split(',')))
+    pep_psmcount[array2[i][1]]=array2[i][4]
 
 
 start=400
@@ -199,10 +200,9 @@ setwidth=max(setwidth1,setwidth2)
 
 im=Image.new('RGB',(setwidth,setheight),'#ddd')    
 draw=ImageDraw.Draw(im)
-fontPath='/usr/share/fonts/truetype/ttf-dejavu/DejaVuSansCondensed-Bold.ttf'
-font=ImageFont.truetype(fontPath,30)
-fontPath2='/usr/share/fonts/truetype/ttf-dejavu/DejaVuSans-Bold.ttf'
-font2=ImageFont.truetype(fontPath2,16)
+
+font=ImageFont.truetype("Noxchi_Arial.ttf",30)
+font2=ImageFont.truetype("Noxchi_Arial.ttf",16)
 
 
 exoncor=[] #this list will store starting cordinates of exons 
@@ -344,21 +344,22 @@ for i in range(0,len(uniq_cluster)):
     y4=axis_start+100*ymax
     drawxy(ymax)
     draw.text((100,(y4+axis_start)/2),'cluster'+str(cluster),font=font,fill='black')
-    cluster_psm={}
+    pep_label={}
     for i in range(0,len(array2)):
         if int(array2[i][6])==cluster:
             pep=array2[i][1]
-            cluster_psm[pep]=int(array2[i][2])
+            pep_label[pep]=int(array2[i][2])
 
-    uniqpep=sorted(cluster_psm.iteritems(), key=operator.itemgetter(1))
+    uniqpep=sorted(pep_label.iteritems(), key=operator.itemgetter(1))
     for i in range(0,len(uniqpep)):
         pep=uniqpep[i][0]
         barstart=400+i*230
         histogram(pep,cluster)
-        pepNO=cluster_psm[pep]
+        pepNO=pep_label[pep]
+        psmcount=pep_psmcount[pep]
+        xlabel='peptide '+str(pepNO)+'('+psmcount+')'
+        draw.text((barstart+50,y4),xlabel,font=font2,fill='black')
         
-        draw.text((barstart+50,y4),'peptide '+str(pepNO),font=font2,fill='black')
-        
-image2=gene+'_pattern_'+sample+'.jpg'
+image2=gene+'_pattern_'+sample+'.png'
 im.save(image2)
 print image2+' saved'

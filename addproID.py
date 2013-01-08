@@ -8,10 +8,11 @@ handle.close()
 
 pro_gene={}
 for proID in record_dict.keys():
-	descrip=record_dict[proID].description
-	ind=descrip.index("gene:")
-	geneID=descrip[ind+5:ind+20]
-	pro_gene[proID]=geneID
+        descrip=record_dict[proID].description
+        ind=descrip.index("gene:")
+        geneID=descrip[ind+5:ind+20]
+        pro_gene[proID]=geneID
+
 
 infile=open(sys.argv[1],'r')
 
@@ -24,14 +25,16 @@ for line in infile:
 outfile=open(sys.argv[2],'w')
 
 human=Genome('human',Release=63)
+
 for pro in pro_gene.keys():
 	gene=pro_gene[pro]
 	if gene in gene_symbol:
-		line="%s\t%s\t%s\n" % (pro,gene,gene_symbol[gene])
+                line="%s\t%s\t%s\n" % (pro,gene,gene_symbol[gene])
 		outfile.write(line)
 	else:
-		entry = human.getGeneByStableId(StableId=gene)
+                entry = human.getGeneByStableId(StableId=gene)
 		line="%s\t%s\t%s\n" % (pro,gene,entry.Symbol)
+		outfile.write(line)
 
 infile.close()
 outfile.close()
