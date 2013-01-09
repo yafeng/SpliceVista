@@ -34,7 +34,7 @@ def normalize(lis):
     return normalized
 
 def main():
-    infile=open(sys.argv[1],'r')
+    infile=open(infilename,'r')
     genearray=extractpsm(gene,infile)
     infile.close()
     peplist=getpep(genearray)
