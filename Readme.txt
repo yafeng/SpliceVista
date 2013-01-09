@@ -20,6 +20,7 @@ SpliceView is a tool for identifcation and visualization of splice variants base
 SpliceView was written in Python 2.7.2. It consists of four scripts: converter.py, download.py, mapping.py and visualization.py. They are compressed into a package. The following python packages need to be installed for SpliceView to work: 
 Biopython
 Python Image Library (PIL)
+numpy
 
 Manual
 Download SpliceView using the following command: (you might need to install git first, type the command in a ternimal: apt-get install git-core)
@@ -45,7 +46,7 @@ The first argument is the input file, the second is the prefix of output file. Y
 Step3: Download data from EVDB and GenBank - download.py 
 The script in this step retrieves splice variants in EVDB by gene symbol and the translated sequences of these splice variants in GenBank.
 
-Command: Python download.py heavy your_email@xxx
+Command: Python download.py heavy your_email@xxx.xx
 (A valid email address is required to access the GenBank database through command line)
 Output: splicingvar.txt, subexon.txt, varseq.fa, gene_notfound.txt, var_notfound.txt.
 
