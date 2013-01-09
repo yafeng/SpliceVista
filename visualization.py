@@ -3,7 +3,7 @@ import sys
 import Image, ImageDraw, ImageFont
 from collections import OrderedDict
 import operator
-import scipy
+import numpy
 def extract(gene,infile):#extract splicevariant, subexon info for one gene
     array=[]
     for line in infile:
@@ -122,8 +122,8 @@ def histogram(pep,cluster):
     for i in range(0,len(array2)):
         if array2[i][1]==pep:
             a=[array2[i][5].split(','),array2[i][7].split(',')]
-            b=scipy.array(a,dtype=float)
-            pattern=scipy.transpose(b)
+            b=numpy.array(a,dtype=float)
+            pattern=numpy.transpose(b)
     if cluster!=0:
         color=getcolor(cluster,uniq_cluster,colorlist)
     else:

@@ -51,18 +51,13 @@ output_file1=open(variantfile,'a')
 subexonfile='subexon.txt'
 file1=open(subexonfile,'r')
 downloadgene=getdownloadgene(file1)
-print len(downloadgene),'genes exon structure stored locally'
+print len(downloadgene),'genes exon composition stored locally'
 
 
 output_file2=open(subexonfile,'a')
 
-file3=open('gene_notfound.txt','r')
-notfounddict={}
-for line in file3:
-    if line!='' and line[:-1] not in notfounddict:
-        notfounddict[line[:-1]]=1 #get a genelist that are not found in EVDB
 
-file3.close()
+output_file3=open('gene_notfound.txt','a')
 
 newgene=0
 
@@ -80,11 +75,9 @@ for i in range(0,len(genelist)):
         response.readline()
         s=response.read()
         if s[0:10]=='No results':
-            if genelist[i] not in notfounddict:
-                notfounddict[genelist[i]]=1        
+            output_file3.write(genelist[i]+'\n')       
         else:
             newgene+=1
-            print genelist[i]
             output_file1.write(s)
 
             values['resultType']='subexon'
@@ -94,19 +87,15 @@ for i in range(0,len(genelist)):
             newresponse.readline()
             output_file2.write(newresponse.read())
     if i%1000==0:
-        print genelist[i], i,'\tgenes processed'
+        print i,'\tgenes processed'
 
 print len(genelist),'genes processed'
-print newgene,'new genes exon structure downloaded'
+print newgene,'new genes exon composition downloaded'
 
 output_file2.close()
 print subexonfile,'saved'
 output_file1.close()
 print variantfile,'saved'
-output_file3=open('gene_notfound.txt','w')
-for key in notfounddict.keys():
-    output_file3.write(key+'\n')
-
 output_file3.close()
 print 'gene_notfound.txt saved'
 
