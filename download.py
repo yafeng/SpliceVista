@@ -49,14 +49,14 @@ variantfile='splicingvar.txt'
 output_file1=open(variantfile,'a')
 
 subexonfile='subexon.txt'
-file1=open(subexonfile,'a')
+file1=open(subexonfile,'r')
 downloadgene=getdownloadgene(file1)
 print len(downloadgene),'genes exon structure stored locally'
 
 
 output_file2=open(subexonfile,'a')
 
-file3=open('gene_notfound.txt','w')
+file3=open('gene_notfound.txt','r')
 notfounddict={}
 for line in file3:
     if line!='' and line[:-1] not in notfounddict:
@@ -94,7 +94,7 @@ for i in range(0,len(genelist)):
             newresponse.readline()
             output_file2.write(newresponse.read())
     if i%1000==0:
-        print i,'\tgenes processed'
+        print genelist[i], i,'\tgenes processed'
 
 print len(genelist),'genes processed'
 print newgene,'new genes exon structure downloaded'
@@ -113,56 +113,61 @@ print 'gene_notfound.txt saved'
 ############fetch translated sequence from NCBI for all splicing variants#####
 output_file1=open(variantfile,'r')
 varlist=getvariant(output_file1).keys()
-print 'there are',len(varlist),'splice variants in total'
+print 'there are',len(varlist),'splice variants for those genes in your input file'
+output_file1.close()
+Entrez.email=sys.argv[2]
 
-Entrez.email='yafeng@kth.se'
-handle=open('varseq.fa','r')
-record_dict = SeqIO.to_dict(SeqIO.parse(handle, "fasta"))
-print len(record_dict),'splice variants sequence downloaded'
-
+record_dict = SeqIO.index("varseq.fa", "fasta")
+print len(record_dict),'splice variants sequence have been downloaded in the varseq.fa'
+var_download={}
+for key in record_dict.keys():
+	var_download[key]=1
+	
 file4=open('var_notfound.txt','a')
 output_handle=open('varseq.fa','a')
 
 newvar=0
+
 for i in range(0,len(varlist)):
-    if varlist[i] not in record_dict:
+    if varlist[i] not in var_download:
         try:
             handle=Entrez.efetch(db='nucleotide',
-                             id=varlist[i],
-                             rettype='gb',
-                             retmode='text',
-                             tool='biopython')
-        except urllib2.HTTPError:
+                                 id=varlist[i],
+                                 rettype='gb',
+                                 retmode='text',
+                                 tool='biopython')
+
+            record=SeqIO.read(handle,'gb')
+            seqtype=[]
+            for seq_feature in record.features:
+                seqtype.append(seq_feature.type)
+                
+            if 'CDS' in seqtype:
+                x=seqtype.index('CDS')
+                seq_feature=record.features[x]
+                try:
+                    sequence=seq_feature.qualifiers['translation'][0]
+                    output_handle.write(">%s\t%s\t%s\n%s\n" % (
+                    varlist[i],seq_feature.location,record.description,sequence))
+                    newvar+=1
+                except KeyError: #if there is no annotated translation(often occurs when this is a pseudogene), then generate artificial translation.
+                    sequence=str(seq_feature.extract(record.seq).translate())
+                    output_handle.write(">%s\t%s\t%s\n%s\n" % (
+                    varlist[i],seq_feature.location,record.description,sequence))
+            else:
+                x=seqtype.index('source')
+                seq_feature=record.features[x]
+                sequence=str(seq_feature.extract(record.seq).translate())
+                output_handle.write(">%s\t%s\t%s\n%s\n" % (
+                    varlist[i],seq_feature.location,record.description,sequence))
+	except urllib2.HTTPError:
             file4.write('%s\n'%(varlist[i]))
             continue ## if HTTPError occurs, continue fetching from next one.
         except httplib.BadStatusLine:
             time.sleep(1)
             file4.write('%s\n'%(varlist[i]))
-            continue
-        record=SeqIO.read(handle,'gb')
-        seqtype=[]
-        for seq_feature in record.features:
-            seqtype.append(seq_feature.type)
-            
-        if 'CDS' in seqtype:
-            x=seqtype.index('CDS')
-            seq_feature=record.features[x]
-            try:
-                sequence=seq_feature.qualifiers['translation'][0]
-                output_handle.write(">%s\t%s\t%s\n%s\n" % (
-                varlist[i],seq_feature.location,record.description,sequence))
-                newvar+=1
-            except KeyError: #if there is no annotated translation(often occurs when this is a pseudogene), then generate artificial translation.
-                sequence=str(seq_feature.extract(record.seq).translate())
-                output_handle.write(">%s\t%s\t%s\n%s\n" % (
-                varlist[i],seq_feature.location,record.description,sequence))
-        else:
-            x=seqtype.index('source')
-            seq_feature=record.features[x]
-            sequence=str(seq_feature.extract(record.seq).translate())
-            output_handle.write(">%s\t%s\t%s\n%s\n" % (
-                varlist[i],seq_feature.location,record.description,sequence))
-    if i%1000==0:
+            continue	            
+    if i>0 and i%1000==0:
         print i,'\tsplice variants processed'
 
 print len(varlist),'splice variants processed'
