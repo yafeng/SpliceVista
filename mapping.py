@@ -258,15 +258,14 @@ def main():
     
 ##################map peptide sequence#############################
 if __name__=='__main__':
-    prefix=sys.argv[1]
-    infilename=prefix+'_cluster.txt'
-    input_file=open(infilename,'r')
+    input_file=open(sys.argv[1],'r')
     genelist=getgene(input_file)
     print 'there are',len(genelist),'genes in the file'
     input_file.close()
 
     record_dict=SeqIO.index('varseq.fa','fasta')
-
+    
+    prefix=sys.argv[2]
     output1=prefix+'_mappingout.txt'
     output2=prefix+'_genestatistics.txt'
     

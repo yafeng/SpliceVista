@@ -2,10 +2,9 @@ SpliceView
 Author: Yafeng Zhu. Email: yafeng.zhu@scilifelab.se, yafeng.zhu@ki.se
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
+of this software and associated documentation files, to deal
 in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is furnished
+to non-commercially use, copy, modify, merge, redistribute the Software.
 to do so, subject to the following conditions:
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
 INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
@@ -21,6 +20,7 @@ SpliceView was written in Python 2.7.2. It consists of four scripts: converter.p
 Biopython
 Python Image Library (PIL)
 numpy
+scipy (only needed if you run step5-pqpq2.py)
 
 Manual
 Download SpliceView using the following command: (you might need to install git first, type the command in a ternimal: apt-get install git-core)
@@ -32,7 +32,7 @@ First, you need to extract some data from the output file of database searching 
 Accession	peptide sequence		1	2	3	4	5	6	7	8
 ENSP00000342181 nSQDDYDEER      3638.974989     3573.00811      3754.7922       3734.386299     3359.112228     2412.318846     2468.562338     3162.3
 
-*NOTE* In the column with sample tag 1-8, they are the intensity value from 8-plex iTRAQ labelling.(put the standard or control in the first place)
+*NOTE* In the column with sample tag 1-8, they are the intensity value from 8-plex iTRAQ labelling.(put the standard or control in the first place). Tip: copy and paste the needed columns in EXCEL, and then copy and save it in a plain text file.
 It is ok to have multiple IDs in the Accession column, but it has to be separated by semicomma (;) symbol. Peptides that belong to multiple genes will be removed before the mapping step.
 	
 Here, we will use the heavy_testfile.txt file (a tab-delimited text file described as in step1) to illustrate the workflow.
@@ -41,7 +41,7 @@ Step2:insert gene symbol- converter.py
 Read and insert gene symbol for each entry. Each protein entry will be assigned a gene symbol which will be used to retrieve its known splice variants in the next step. This is done by converter.py.
 Command: Python converter.py heavy_testfile.txt heavy
 
-The first argument is the input file, the second is the prefix of output file. You will get an output file named as heavy_pepdata.txt. 
+The first argument is the input file, the second is the prefix of output file. You will get an output file named as heavy_psmdata.txt. 
 
 Step3: Download data from EVDB and GenBank - download.py 
 The script in this step retrieves splice variants in EVDB by gene symbol and the translated sequences of these splice variants in GenBank.
@@ -57,20 +57,33 @@ Tip: if you have multiple sample files in one project, it is better to put all t
 Step4: calculate the mean intensity ratio and standard deviation of PSMs for all peptide
 Most often a peptide is identified by multiple peptide spectra matchs. To calculate the relative intensity of each PSM, the intensity of each iTRAQ plex is normalized by the intensity of the standard or control using the following fomula:
 X(normalized)=intensity of X/intensity of 1, X=1,2,3...
-Then for each peptide, calculate the mean of all PSMs' relative intensity and the standard deviation
+Then for each peptide, calculate the mean of all PSMs' relative intensity and the standard deviation.
 Command: Python normalize.py heavy
-if PQPQ is not used to cluster peptides based on their quantitative patterns, all peptides will be assigned to cluster 0.
+output: heavy_pepdata.txt
+if PQPQ2 is not used to cluster peptides based on their quantitative patterns, all peptides will be assigned to cluster 0.
 
-Step5: Map peptides to its transcriptional position - mapping.py
-The script in this step uses output from previous step to map identified peptides to its transcriptional positions.
-Command: Python mapping.py heavy 
+Step5: clustering-pqpq2.py
+This step will cluster peptides based on their quantitative patterns, each peptide will be assigned a number to indicate which cluster it belongs. If one protein has only one unique peptide, then this peptide will get a number '0'  instead.
+Command: python pqpq2.py --i heavy_pepdata.txt --o heavy_pqpqout.txt
+The --i argument should be the output from step4 (heavy_pepdata.txt), --o argument is the name of output file. There are some other options to use. 
+--metric defines the way to calculate the distance, "euclidean" is the default. "correlation" can also be used.
+--method defines the way of calculating the distance between the newly formed clusters. Available options is "single","complete","average","weighted". "average" is the default.
+--d set the distance cutoff for generating a new cluster. Default value is 0.4. 
+
+Step6: Map peptides to its transcriptional position - mapping.py
+The script in this step maps identified peptides to its transcriptional positions. 
+NOTE: if step5 is skipped, the input file of this step is the output of step4, which is heavy_pepdata.txt. If step5 is not skipped, the input file of this step is the output of step5, which is heavy_pqpqout.txt.
+
+Command: Python mapping.py heavy_pepdata.txt heavy (if step5 is skipped)
+Command: Python mapping.py heavy_pqpqout.txt heavy (if step5 is not skipped)
+The first argument is input file and the second is the prefix of output file
 Output: heavy_mappingout.txt, heavy_genestatistic.txt
 
-The file mappingout.txt is PSM based format in which each row is one PSM. It will be used in the visualization part. The file Genestatistic.txt is gene based format in which each row is one gene. It is used to filter out genes of interest.
+The file mappingout.txt is peptide based format in which each row is one unique peptide. It will be used in the visualization part. The file Genestatistic.txt is gene based format in which each row is one gene. It is used to filter out genes of interest.
 
-Create figure - visualization.py The script is used to visualize the gene of interest. Given a gene symbol, it will generate a high quality picture with all important information described in the paper.
+Step7: Create figure - visualization.py The script is used to visualize the gene of interest. Given a gene symbol, it will generate a high quality picture which contains the exon composition of known splice variants, transcriptional positions of identified peptides and quantitative patterns of peptides.
+
 Command: Python visualization.py heavy ARF5
 Output:ARF5_pattern_heavy.png
 
 The gene symbol should be exactly the same as the one you see in the file genestatistic.txt
-

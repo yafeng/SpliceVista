@@ -59,7 +59,7 @@ print 'writing output...'
 infile2=open(msoutput,'r')
 
 prefix=sys.argv[2]
-outfilename=prefix+'_pepdata.txt'
+outfilename=prefix+'_psmdata.txt'
 outfile=open(outfilename,'w')
 
 line=infile2.readline()

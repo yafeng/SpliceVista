@@ -58,9 +58,9 @@ def main():
         output.write(newline)
         
 if __name__=='__main__':
-	prefix=sys.argv[1]
-	infilename=prefix+'_pepdata.txt'
-    handle=open(infilename,'r')# take sample_pepdata.txt as input file
+    prefix=sys.argv[1]
+    infilename=prefix+'_psmdata.txt'
+    handle=open(infilename,'r')
     handle.readline()
     newheader=['gene','pep','PSM count','foldchange','standard_dev','cluster']
     firstline='\t'.join(newheader)+'\n'
@@ -68,7 +68,7 @@ if __name__=='__main__':
     print 'there are',len(genelist),'genes in total'
     handle.close()
 
-    outfilename=prefix+'_cluster.txt'
+    outfilename=prefix+'_pepdata.txt'
     output=open(outfilename,'w')
     output.write(firstline)
     for i in range(0,len(genelist)):

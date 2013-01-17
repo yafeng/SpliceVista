@@ -36,7 +36,7 @@ def getvariant(infile): #get variant acc list out of splicevariant file
 
 #####################fetch splicing variants from EVDB for all genes########
 prefix=sys.argv[1]
-infilename=prefix+'_pepdata.txt'
+infilename=prefix+'_psmdata.txt'
 pepdatafile=open(infilename,'r')
 genelist=getgene(pepdatafile).keys()
 print 'there are',len(genelist),'genes in total' #after discard PSMs mapped to multiple genes
