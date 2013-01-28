@@ -14,8 +14,9 @@ def getgene(infile): #get gene list out of infile
 def extractpep(gene,infile):#extract all pep for one gene
     array=[]
     for line in infile:
-        if line.split('\t')[0]==gene:
-            array.append(line[:-1].split('\t')); 
+        row=line[:-1].split('\t')
+        if row[0]==gene:
+            array.append(row[:-1]); #remove last column from pepdata.txt
     return array
 
 def main(): #clustering and write output
@@ -28,7 +29,8 @@ def main(): #clustering and write output
             matrix.append(pep_array[i][3].split(','))
 
         dataMatrix=numpy.array(matrix,dtype=float)
-        D = sch.distance.pdist(dataMatrix,metric)# vector of pairwise distances
+        d = sch.distance.pdist(dataMatrix,metric)# vector of pairwise distances
+        D = numpy.clip(d,0,2)
         L = sch.linkage(D, method,metric)
         ind = sch.fcluster(L,distance,'distance')#distance is dissmilarity(1-correlation)
         p=numpy.array(pep_array)
@@ -48,7 +50,7 @@ def formatoutput(array): #format output
 if __name__=='__main__':
     ################  Default  ################
     method = 'average'
-    distance= 0.4
+    distance= 0.2
     metric = 'euclidean'
     
     ################  Comand-line arguments ################
@@ -56,11 +58,12 @@ if __name__=='__main__':
         print "Warning! wrong command, please read the mannual in Readme.txt."
         print "Example: python pqpq2.py --i heavy_pepdata.txt --o heavy_pqpqout.txt"
     else:
-        options, remainder = getopt.getopt(sys.argv[1:],'', ['metric',
-                                                             'method','d',
+        options, remainder = getopt.getopt(sys.argv[1:],'', ['metric=',
+                                                             'method=','d=',
                                                              'i=','o='])
+        print options,remainder
         for opt, arg in options:
-            if opt == '--metric': method=arg
+            if opt == '--metric': metric=arg
             elif opt == '--method': method=arg
             elif opt == '--d': distance=arg
             elif opt == '--i':infilename=arg
@@ -73,6 +76,8 @@ if __name__=='__main__':
     newheader=['gene','pep','PSM count','foldchange','standard_dev','cluster']
     firstline='\t'.join(newheader)+'\n'
     genelist=getgene(handle)
+    print metric,"metric is used to measure the distance of elements"
+    print "distance cutoff to form a new cluster is",distance
     print 'there are',len(genelist),'genes in total'
     handle.close()
     

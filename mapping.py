@@ -136,7 +136,7 @@ def main():
     
     handle1.close()
 
-    handle2=open(infilename)
+    handle2=open(sys.argv[1],'r')
     array2=extractpep(gene,handle2)
     handle2.close()
 

@@ -1,14 +1,13 @@
 import sys
 import urllib,urllib2
 from Bio import Entrez,SeqIO
-from collections import OrderedDict
 
 def getgene(infile): #get gene symbol list out of pepdata file 
     dic={}
     infile.readline()
     for line in infile:
         gene=line.split('\t')[1]
-        if ";" not in gene and gene not in dic: #abandon PSMs mapped to multiple genes
+        if ";" not in gene and gene not in dic:#abandon PSMs mapped to multiple genes
             dic[gene]=1
 
     return dic;
@@ -26,9 +25,12 @@ def getvariant(infile): #get variant acc list out of splicevariant file
     dic={}
     for line in infile:
         array=line.split('\t')
-        acc=array[4]
-        if acc not in dic:
-            dic[acc]=1
+        try:
+            acc=array[4]
+            if acc not in dic:
+                dic[acc]=1
+        except IndexError:
+            continue;
     return dic
 
 ###################Function part end###############################
@@ -100,14 +102,12 @@ output_file3.close()
 print 'gene_notfound.txt saved'
 
 ############fetch translated sequence from NCBI for all splicing variants#####
-output_file1=open(variantfile,'r')
-varlist=getvariant(output_file1).keys()
-print 'there are',len(varlist),'splice variants for those genes in your input file'
-output_file1.close()
+handle_var=open(variantfile,'r')
+varlist=getvariant(handle_var).keys()
+handle_var.close()
 Entrez.email=sys.argv[2]
 
 record_dict = SeqIO.index("varseq.fa", "fasta")
-print len(record_dict),'splice variants sequence have been downloaded in the varseq.fa'
 var_download={}
 for key in record_dict.keys():
 	var_download[key]=1
@@ -149,17 +149,14 @@ for i in range(0,len(varlist)):
                 sequence=str(seq_feature.extract(record.seq).translate())
                 output_handle.write(">%s\t%s\t%s\n%s\n" % (
                     varlist[i],seq_feature.location,record.description,sequence))
-	except urllib2.HTTPError:
+        except urllib2.HTTPError:
             file4.write('%s\n'%(varlist[i]))
             continue ## if HTTPError occurs, continue fetching from next one.
         except httplib.BadStatusLine:
             time.sleep(1)
             file4.write('%s\n'%(varlist[i]))
             continue	            
-    if i>0 and i%1000==0:
-        print i,'\tsplice variants processed'
 
-print len(varlist),'splice variants processed'
 print newvar,'new splice variants sequence downloaded'
 output_handle.close()
 file4.close()

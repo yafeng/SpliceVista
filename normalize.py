@@ -5,7 +5,7 @@ def getgene(infile): #get gene list out of infile
     dic={}
     for line in infile:
         gene=line.split('\t')[1]
-        if gene not in dic:
+        if ";" not in gene and gene not in dic:
             dic[gene]=1
 
     return dic.keys();
