@@ -4,6 +4,7 @@ import Image, ImageDraw, ImageFont
 from collections import OrderedDict
 import operator
 import numpy
+
 def extract(gene,infile):#extract splicevariant, subexon info for one gene
     array=[]
     for line in infile:
@@ -198,7 +199,7 @@ setwidth2=400+230*maxuniq
 print setwidth1,setwidth2
 setwidth=max(setwidth1,setwidth2)
 
-im=Image.new('RGB',(setwidth,setheight),'#ddd')    
+im=Image.new('RGBA',(setwidth,setheight),'#ddd')    
 draw=ImageDraw.Draw(im)
 
 font=ImageFont.truetype("Noxchi_Arial.ttf",30)
@@ -244,6 +245,7 @@ for j in range(0,len(var)):
     stx=0
     draw.text((10,y),var[j],font=font,fill='black')
     minnum=min(Exon_pos1[j])# the num of the first exon of this variant
+    color='green'
     if array[0][3]=='+': #check seq direction is + or -
         stx1=start+min(min(varcor[j]))-startcor[minnum-1]+exonstart[minnum-1]
     else:
@@ -254,20 +256,20 @@ for j in range(0,len(var)):
         width=max(varcor[j][i])-min(varcor[j][i])
         if array[0][3]=='+':
             stx=min(cor)-startcor[num-1]+exonstart[num-1]
-            draw.rectangle([start+stx,y,start+stx+width,y+height],fill='green',outline='black');
+            draw.rectangle([start+stx,y,start+stx+width,y+height],fill=color,outline='black');
         else:
             stx=startcor[num-1]-max(cor)+exonstart[num-1]
-            draw.rectangle([start+stx,y,start+stx+width,y+height],fill='green',outline='black');
+            draw.rectangle([start+stx,y,start+stx+width,y+height],fill=color,outline='black');
             #print startcor[num-1],max(cor),exonstart[num-1],stx
     if minnum!=num:        
-        draw.rectangle([stx1,y1,start+stx,y1+10],fill='green',outline='green')
+        draw.rectangle([stx1,y1,start+stx,y1+10],fill=color,outline=color)
     else:
         if array[0][3]=='-':
             stx=startcor[num-1]-max(min(varcor[j]))+exonstart[num-1]
-            draw.rectangle([stx1,y1,start+stx,y1+10],fill='green',outline='green')
+            draw.rectangle([stx1,y1,start+stx,y1+10],fill=color,outline=color)
         else:
             stx=min(max(varcor[j]))-startcor[num-1]+exonstart[num-1]
-            draw.rectangle([stx1,y1,start+stx,y1+10],fill='green',outline='green')
+            draw.rectangle([stx1,y1,start+stx,y1+10],fill=color,outline=color)
     
 ######Map clustered Peptide to known splicing variants##############
 colorlist=['blue','lime','red','magenta','yellow','cyan',
@@ -275,11 +277,11 @@ colorlist=['blue','lime','red','magenta','yellow','cyan',
 
 
 ###draw mapped peptide######
-
+'''
 for k in range(0,len(var)):
     y=160+60*k
     for i in range(0,len(array2)):
-        color='violet'
+        color=(255,0,0,0)
         MTV=array2[i][11].split(',')
         if array2[i][11]=='':
             continue;
@@ -291,14 +293,8 @@ for k in range(0,len(var)):
             #print array2[i][4],var[k],MTV
             stx1=abs(int(array2[i][12])-startcor[exon1-1])+exonstart[exon1-1]
             stx2=abs(int(array2[i][13])-startcor[exon2-1])+exonstart[exon2-1]
-            if exon1==exon2:
-                draw.rectangle([start+stx1,y,start+stx2,y+height],fill=color,outline=color)
-            else:
-                
-                draw.rectangle([start+stx1,y,start+exonstart[exon2-1]-20,y+height],fill=color,outline=color)
-                draw.rectangle([start+exonstart[exon2-1],y,start+stx2,y+height],fill=color,outline=color)
-                    
-                                            
+            draw.rectangle([start+stx1,y,start+stx2,y+height],fill=color,outline='black')
+'''
 bottom=y+60
 
 for i in range(0,len(uniq_cluster)):

@@ -3,34 +3,6 @@ from Bio import SeqIO
 from collections import OrderedDict
 import operator
 
-def getgene(infile): #get gene symbol list out of pqpq file 
-    lis=OrderedDict()
-    infile.readline()
-    for line in infile:
-        gene=line.split('\t')[0]
-        if ";" not in gene and gene not in lis:
-            lis[gene]=1
-
-    return lis.keys();
-
-def extractvar(gene,infile):#extract splicevariant info for one gene
-    array=[]
-    for line in infile:
-        if line.split('\t')[0]==gene:
-            array.append(line[:-2].split('\t')); #the last field in splicingvar file is '0\r\n'
-
-    return array
-
-def extractpep(gene,infile):#extract all pep for one gene
-    array=[]
-    for line in infile:
-        if line.split('\t')[0]==gene:
-            array.append(line[:-1].split('\t')); 
-    return array  
-
-#######################Subexons structure############
-
-
 ########################Splicing Variants Structure#########
 def genevariant(lis): #returns a list of variants the gene has.
     varlist=OrderedDict()
@@ -97,26 +69,11 @@ def getrecord(lis,records):
 
     return recordlist
 
-def normalize(lis):
-    normalized=[]
-    for i in range(0,len(lis)):
-        normvalue=2*float(lis[i])/(float(lis[0])+float(lis[1]))
-        normalized.append(normvalue)
-
-    return normalized
-
-def median(mylist):
-    sorts = sorted(mylist)
-    length = len(sorts)
-    if length % 2==0:
-        return (sorts[length / 2] + sorts[length / 2 - 1]) / 2.0
-    return sorts[length / 2]
-
 def sort_table(table, col=0):
     return sorted(table, key=operator.itemgetter(col))
 ###################Function part end###############################
 def main():
-    pqpq_cluster=[]
+    pep_cluster=[]
     NOMV=[]
     MTV=[]
     Exon_st=[]
@@ -124,25 +81,15 @@ def main():
     Chr_start=[]
     Chr_end=[]
     pep_chr=[]
-    plex7=[]
-    plex8=[]
     
-    handle1=open('splicingvar.txt')                           
-    array1=extractvar(gene,handle1)# the array stores splicing variants file the gene has
-    var=genevariant(array1)
-    Exon_pos1=Exon_no(var,array1) 
-    varcor=var_cor(var,array1)
-    CDR_cor=Exon_cor(var,array1)
+    var=genevariant(vararray)
+    Exon_pos1=Exon_no(var,vararray) 
+    varcor=var_cor(var,vararray)
+    CDR_cor=Exon_cor(var,vararray)
     
-    handle1.close()
-
-    handle2=open(sys.argv[1],'r')
-    array2=extractpep(gene,handle2)
-    handle2.close()
-
-    for j in range(0,len(array2)):
-        pqpq_cluster.append(int(array2[j][5]))
-        seq=array2[j][1]
+    for j in range(0,len(peparray)):
+        pep_cluster.append(int(peparray[j][5]))
+        seq=peparray[j][1]
         num=0 #count how many known variants the peptide mapped to
         MTV.append([])
         for i in range(0,len(var)):
@@ -153,7 +100,6 @@ def main():
                 k=i
                 n=m;
 
-        #print var[i],k,seq,n
         NOMV.append(num)
         if num!=0:# if the peptide map to one of splicing variants
             CDR=record_dict[var[k]].description.split('\t')[1]
@@ -175,12 +121,12 @@ def main():
             Exon_ed.append(exon_order2)
             
 
-            if array1[0][3]=='+':                       
+            if vararray[0][3]=='+':                       
                 chr_st=min(varcor[k][index1])+exon_st-min(CDR_cor[k][index1])
                 Chr_start.append(chr_st)
                 chr_ed=min(varcor[k][index2])+exon_ed-min(CDR_cor[k][index2])
                 Chr_end.append(chr_ed)
-            elif array1[0][3]=='-':
+            elif vararray[0][3]=='-':
                 chr_st=max(varcor[k][index1])-(exon_st-min(CDR_cor[k][index1]))
                 Chr_start.append(chr_st)
                 chr_ed=max(varcor[k][index2])-(exon_ed-min(CDR_cor[k][index2]))
@@ -194,7 +140,7 @@ def main():
 
         pep_chr.append([seq,chr_st])         
 
-    pep_chr_sorted=sort_table(pep_chr,1)
+    pep_chr_sorted=sort_table(pep_chr,1) #sort the peptides according to genomic coordinates
 
     uniqpep={}
     n=0
@@ -203,18 +149,18 @@ def main():
         if pep not in uniqpep:
             n+=1
             uniqpep[pep]=n
-            
-    uniq_cluster=list(set(pqpq_cluster))
+    
+    uniq_cluster=list(set(pep_cluster))
     if 0 in uniq_cluster:
         uniq_cluster.remove(0) # 0 means unclustered peptides
     
         
     var_identified={} #store the ID of identified splice variants for this gene
-    psmsum=0
-    for i in range(0,len(array2)):
-        pep=array2[i][1]
-        psmsum+=int(array2[i][2])
-        pepratio=array2[i][3]
+    gene_psmcount=0
+    for i in range(0,len(peparray)):
+        pep=peparray[i][1]
+        gene_psmcount+=int(peparray[i][2])
+        pepratio=peparray[i][3]
         s1=str(len(pep))
         s2=str(len(uniq_cluster))
         s3=str(len(var))
@@ -230,7 +176,7 @@ def main():
 
         peplabel=str(uniqpep[pep])
         line="%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" % (gene,pep,
-                peplabel,s1,array2[i][2],pepratio,array2[i][5],array2[i][4],
+                peplabel,s1,peparray[i][2],pepratio,peparray[i][5],peparray[i][4],
                 s2,s3,s4,s5,s6,s7,s8,s9)
 
        
@@ -241,13 +187,13 @@ def main():
 
     n1=len(uniq_cluster)
     n2=len(var)    
-    n3=psmsum
+    n3=gene_psmcount
     n4=len(uniqpep)
     n5=len(var_identified)
     s10=','.join(var_identified.keys())
     exonlis=Exon_st+Exon_ed
     uniqexon=list(set(exonlis))
-    exoncoverage=float(len(uniqexon))/Countexon(array1)
+    exoncoverage=float(len(uniqexon))/Countexon(vararray)
     newline="%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n"%(gene,str(n1),str(n2),
                                                         str(n3),str(n4),
                                                         str(exoncoverage),
@@ -259,11 +205,33 @@ def main():
 ##################map peptide sequence#############################
 if __name__=='__main__':
     input_file=open(sys.argv[1],'r')
-    genelist=getgene(input_file)
-    print 'there are',len(genelist),'genes in the file'
+    input_file.readline()
+    gene_peparray={}
+    for line in input_file:
+        row=line[:-1].split("\t")
+        gene=row[0]
+        if gene not in gene_peparray:
+            gene_peparray[gene]=[row]
+        else:
+            gene_peparray[gene].append(row)
+    
+    print 'there are',len(gene_peparray),'genes in total'
     input_file.close()
+    print 'mapping.....'
 
     record_dict=SeqIO.index('varseq.fa','fasta')
+    
+    handle=open('splicingvar.txt')
+    gene_vararray={}
+    for line in handle:
+        row=line[:-1].split("\t")
+        gene=row[0]
+        if gene not in gene_vararray:
+            gene_vararray[gene]=[row]
+        else:
+            gene_vararray[gene].append(row)
+    
+    handle.close()
     
     prefix=sys.argv[2]
     output1=prefix+'_mappingout.txt'
@@ -289,14 +257,18 @@ if __name__=='__main__':
         if line[:-1] not in notfounddict:
             notfounddict[line[:-1]]=1 #get a genelist that are not found in EVDB
 
-    print 'mapping.....'  
-    for i in range(0,len(genelist)):
-        gene=genelist[i]
+    icount=0
+    for gene in gene_peparray.keys():
+        icount+=1
         if gene in notfounddict:
             continue;
         else:
-            print gene,i
+            peparray=gene_peparray[gene]
+            vararray=gene_vararray[gene]
             main()
+        if icount%1000==0:
+            print icount,"genes processed"
+            
                 
     print 'program finished'
     print output1,'saved'

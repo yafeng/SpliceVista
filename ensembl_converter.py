@@ -1,6 +1,15 @@
 import sys
 from Bio import SeqIO
 
+def normalize(lis):
+    newlis=[]
+    for i in range(0,len(lis)):
+        normvalue=2*float(lis[i])/(float(lis[0])+float(lis[1]))
+        newlis.append(normvalue)
+    
+    return newlis
+
+
 print "reading input..."
 
 protein_symbol={}
@@ -68,10 +77,14 @@ cols.insert(1,'gene symbol')
 outfile.write("\t".join(cols))
 
 for line in infile2:
-    cols=line.split('\t')
+    cols=line[:-1].split('\t')
+    intensity=cols[2:]
+    ratio=normalize(intensity)
+    ratio_round=[ '%.2f' % elem for elem in ratio ] #round the value, keep 2 digit after decimal
     proteinID=cols[0]
     cols.insert(1,ENSPlist[proteinID])
-    outfile.write("\t".join(cols))
+    newcols=cols[:3]+ratio_round
+    outfile.write("\t".join(newcols)+'\n')
 
 print 'file including gene symbol saved'    
 outfile.close()
