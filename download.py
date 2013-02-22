@@ -97,18 +97,22 @@ handle_var=open(variantfile,'r')
 vardic=getvariant(handle_var)
 handle_var.close()
 
+print len(vardic),"splice variants to be downloaded"
+
 record_dict = SeqIO.index("varseq.fa", "fasta")
 var_download={}
 for key in record_dict.keys():
 	var_download[key]=1
 
-print len(vardic),len(record_dict)
 file4=open('var_notfound.txt','a')
 output_handle=open('varseq.fa','a')
 
 newvar=0
-
+icount=0
 for var in vardic.keys():
+    icount+=1
+    if icount%1000==0:
+        print icount,"known splice varaints in this set of genes "
     if var not in var_download:
         try:
             handle=Entrez.efetch(db='nucleotide',
@@ -148,6 +152,7 @@ for var in vardic.keys():
             file4.write('%s\n'%(var))
             continue	            
 
+print len(vardic),"splice variants processed"
 print newvar,'new splice variants sequence downloaded'
 output_handle.close()
 file4.close()
