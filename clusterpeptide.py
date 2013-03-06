@@ -17,7 +17,10 @@ def main(): #clustering and write output
 
         dataMatrix=numpy.array(matrix,dtype=float)
         d = sch.distance.pdist(dataMatrix,metric)# vector of pairwise distances
-        D = numpy.clip(d,0,2)
+        if metric=="correlation":
+            D = numpy.clip(d,0,2) #when using correlation, all values in distance matrix should be in range[0,2]
+        else:
+            D=d
         L = sch.linkage(D, method,metric)
         ind = sch.fcluster(L,distance,'distance')#distance is dissmilarity(1-correlation)
         p=numpy.array(pep_array)
@@ -32,7 +35,7 @@ if __name__=='__main__':
     ################  Default  ################
     method = 'average'
     distance= 0.4
-    metric = 'euclidean'
+    metric = 'correlation'
     
     ################  Comand-line arguments ################
     if len(sys.argv[1:])<=1:  ### Indicates that there are insufficient number of command-line arguments

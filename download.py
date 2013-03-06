@@ -2,27 +2,15 @@ import sys
 import urllib,urllib2
 from Bio import Entrez,SeqIO
 
-def getgene(infile): #get gene symbol list out of file 
+def getuniqacc(infile,i): #get a unique accession id list out of file, i is the ith coloum(start from 0) i the file which contain accession id
     dic={}
     infile.readline()
     for line in infile:
-        gene=line.split('\t')[0]
-        if gene not in dic:
-            dic[gene]=1
-
+        acc=line.split('\t')[i]
+        if acc not in dic:
+            dic[acc]=1
+    
     return dic;
-
-
-def getvariant(infile): #get variant acc list out of splicingvar.txt file
-    dic={}
-    for line in infile:
-        array=line.split('\t')
-        var_acc=array[4]
-        if var_acc not in dic:
-            dic[var_acc]=1
-
-    return dic
-
 ###################Function part end###############################
 
 Entrez.email=raw_input('please provide a valid email address in order to retrieve data from NCBI:(finish by ENTER)\n')
@@ -31,7 +19,7 @@ Entrez.email=raw_input('please provide a valid email address in order to retriev
 prefix=sys.argv[1]
 infilename=prefix+'_pepdata.txt'
 pepdatafile=open(infilename,'r')
-genedic=getgene(pepdatafile)
+genedic=getuniqacc(pepdatafile,0)
 print 'there are',len(genedic),'genes in total'
 
 pepdatafile.close()
@@ -43,7 +31,7 @@ output_file1=open(variantfile,'a') #open the file in appending mode
 
 subexonfile='subexon.txt'
 file1=open(subexonfile,'r')
-downloadgene=getgene(file1)
+downloadgene=getuniqacc(file1,0)
 print len(downloadgene),'genes exon composition stored locally'
 
 
@@ -94,13 +82,13 @@ print 'gene_notfound.txt saved'
 
 ############fetch translated sequence from NCBI for all splicing variants#####
 handle_var=open(variantfile,'r')
-vardic=getvariant(handle_var)
+vardic=getuniqacc(handle_var,4) #vardic contains all splice variants to be downloaded
 handle_var.close()
 
 print len(vardic),"splice variants to be downloaded"
 
 record_dict = SeqIO.index("varseq.fa", "fasta")
-var_download={}
+var_download={} #var_download contains all splice variants that have been downloaded previously
 for key in record_dict.keys():
 	var_download[key]=1
 
@@ -125,25 +113,29 @@ for var in vardic.keys():
             seqtype=[] #gather sequence feature type
             for seq_feature in record.features:
                 seqtype.append(seq_feature.type)
-                
+                        
             if 'CDS' in seqtype:
                 x=seqtype.index('CDS')
                 seq_feature=record.features[x]
+                codon_start=int(seq_feature.qualifiers['codon_start'][0])+seq_feature.location.nofuzzy_start #nofuzzy_start returns an integer instead of a string
+                codon_end=seq_feature.location.nofuzzy_end
                 try:
                     sequence=seq_feature.qualifiers['translation'][0]
-                    output_handle.write(">%s\t%s\t%s\n%s\n" % (
-                    var,seq_feature.location,record.description,sequence))
+                    
+                    output_handle.write(">%s %s|codon_start=%s|codon_end=%s\n%s\n" % (var,record.description,str(codon_start),str(codon_end),sequence))
                     newvar+=1
                 except KeyError: #if there is no annotated translation(often occurs when this is a pseudogene), then translate the nucleotide sequence into amino acids.
-                    sequence=str(seq_feature.extract(record.seq).translate())
-                    output_handle.write(">%s\t%s\t%s\n%s\n" % (
-                    var,seq_feature.location,record.description,sequence))
+                    sequence=str(seq_feature.extract(record.seq).translate()) #extract CDS region and translate into amino acids
+                    output_handle.write(">%s %s|codon_start=%s|codon_end=%s\n%s\n" % (var,record.description,str(codon_start),str(codon_end),sequence))
+                    newvar+=1
             else:
                 x=seqtype.index('source')
                 seq_feature=record.features[x]
+                codon_start=seq_feature.location.nofuzzy_start+1 #traslation starts from the first nucleotide 
+                codon_end=seq_feature.location.nofuzzy_end
                 sequence=str(seq_feature.extract(record.seq).translate())
-                output_handle.write(">%s\t%s\t%s\n%s\n" % (
-                    var,seq_feature.location,record.description,sequence))
+                output_handle.write(">%s %s|codon_start=%s|codon_end=%s\n%s\n" % (var,record.description,str(codon_start),str(codon_end),sequence))
+                newvar+=1
         except urllib2.HTTPError:
             file4.write('%s\n'%(var))
             continue ## if HTTPError occurs, continue fetching from next one.

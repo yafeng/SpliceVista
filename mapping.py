@@ -102,13 +102,10 @@ def main():
 
         NOMV.append(num)
         if num!=0:# if the peptide map to one of splicing variants
-            CDR=record_dict[var[k]].description.split('\t')[1]
-            if CDR.find('<')!=-1: #usually in 
-                CDS=int(CDR[CDR.index('<')+1:CDR.index(':')])
-            else:
-                CDS=int(CDR[CDR.index('[')+1:CDR.index(':')])
+            CDR=record_dict[var[k]].description.split('|')[1]
+            CDS=int(CDR[CDR.index("=")+1:]) #CDS, codon start 
 
-            exon_st=CDS+(n-1)*3
+            exon_st=CDS+n*3
             exon_ed=exon_st+3*len(seq)
             
             
