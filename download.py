@@ -136,6 +136,8 @@ for var in vardic.keys():
                 sequence=str(seq_feature.extract(record.seq).translate())
                 output_handle.write(">%s %s|codon_start=%s|codon_end=%s\n%s\n" % (var,record.description,str(codon_start),str(codon_end),sequence))
                 newvar+=1
+        except ValueError:
+            print var,"not downloaded"
         except urllib2.HTTPError:
             file4.write('%s\n'%(var))
             continue ## if HTTPError occurs, continue fetching from next one.

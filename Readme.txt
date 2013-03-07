@@ -31,37 +31,47 @@ Note: After you have download SpliceView, DO NOT move or rename original and out
 
 Step1:prepare the input file for SpliceView
 First, you need to extract PSM data from the output file of database searching and format them in a tab-delimited text file like this:
-Accession	peptide sequence		1	2	3	4	5	6	7	8
-ENSP00000342181 nSQDDYDEER      3638.974989     3573.00811      3754.7922       3734.386299     3359.112228     2412.318846     2468.562338     3162.3
+peptide sequence	Accession	1	2	3	4	5	6	7	8
+nSQDDYDEER	ENSP00000342181	3638.974989     3573.00811      3754.7922       3734.386299     3359.112228     2412.318846     2468.562338     3162.3
 
-*NOTE* In the column with sample tag 1-8, they are the original intensity value from 8-plex iTRAQ labelling.(put the standard or control in the first place, original intensity will be normalized). 
+*NOTE* In the column with sample tag 1-8, they are the ion intensity from 8-plex iTRAQ labelling.(put the standard or control in the first place, intensity will be normalized in next step.)
+number of sample can vary, if label free method is used for quantification, precusor area or PSM count can be put in as value. In the end, they will be normalized as well.
 Tip: copy and paste the needed columns in EXCEL, and then copy and save it in a plain text file.
-It is ok to have multiple IDs in the Accession column, but it has to be separated by semicomma (;) symbol. 
+It is ok to have multiple IDs in the Accession column, but it has to be separated by semicomma (;) symbol. Peptide sequence can contain letters in lower case.
 	
 Here, we will use the heavy_testfile.txt file (a tab-delimited text file described as in step1) to illustrate the workflow.
 
 Step2:insert gene symbol for each PSM- ensembl-converter.py (use ensembl-converter.py for ENSP protein accession, or unipro-converter.py for uniprot protein accession)
 Read and insert gene symbol for each PSM. Each protein accession will be assigned a gene symbol which will be used to retrieve its known splice variants in the next step. This is done by converter.py.
+
+Command: Python converter.py --i heavy_testfile.txt --prefix heavy --database ensembl --n 2
+
+The first argument --i is the input file, the second is the prefix of output file. Given the prefix in the example, you will get an output file named as heavy_psmdata.txt. --database specify the database was used to search peptide spectra, --n has three options for normalization: if 0, no normalization is performed, if n is given 1 or 2, intensity will be normalized in method 1 or 2
+
+use --n 0 when intensity of peptides are already normalized in input files.
 To calculate the relative intensity of each PSM, the intensity of PSM in each sample is normalized by the intensity of the standard or control using the following fomula:
-X(relative intensity)=intensity of X/intensity of 1, 
-sample1 is standard or control. X=1,2,3…
-
-Command: Python converter.py heavy_testfile.txt heavy
-
-The first argument is the input file, the second is the prefix of output file. You will get an output file named as heavy_psmdata.txt. 
-
+normalization method 1: 
+X(relative intensity)=intensity of X/intensity of sample1, 
+usually used when sample1 is standard or control. X=1,2,3…
+normalization method 2: 
+X(relative intensity)=intensity of X/mean of intensity of sample1 and sample2, 
+usually used when sample1 and sample2 are two replicates in  control sample. X=1,2,3…
+  
 Step3: merge PSMs for same peptide sequence into one, calculate the mean of relative intensity and standard deviation of PSMs
 Then for each peptide, calculate the mean of all PSMs' relative intensity and the standard deviation.
 
-Command: Python normalize.py heavy
+Command: Python mergepsm.py heavy
 output: heavy_pepdata.txt
 
+use the same prefix in previous step to group PSMs into peptides, intensity of peptide is the mean of all the peptides PSM's relative intensity, standard deviation is calculated.
 Before clusterpeptide.py is used, all peptides will be assigned to cluster 0.
 
 Step4: Download data from EVDB and GenBank - download.py 
 The script in this step retrieves splice variants in EVDB by gene symbol and the translated sequences of these splice variants in GenBank.
 
 Command: Python download.py heavy
+
+use the same prefix in previous step to download splice variant information from database
 (you will asked to type in a valid email in order to access NCBI database)
 Output: splicingvar.txt, subexon.txt, varseq.fa, gene_notfound.txt, var_notfound.txt.
 
@@ -71,10 +81,11 @@ Tip: if you have multiple sample files in one project, it is better to put all t
 This step will take a while depending the number of new splice variant to be downloaded from the database.
 
 Step5: clusterpeptide.py
-This step will cluster peptides based on their relative intensity, each peptide will be assigned a number to indicate which cluster it belongs. If one protein has only one unique peptide, then this peptide will get a cluster '0'  instead.
-Command: python pqpq2.py --i heavy_pepdata.txt --o heavy_pepcluster.txt --metric euclidean --d 0.4
+This step mimics the PQPQ algorithm but much simplified. It only does the peptide clustering which groups peptides based on their relative intensity pattern over samples, each peptide will be assigned a number to indicate which cluster it belongs. If one protein has only one unique peptide, then this peptide will get a cluster '0'  instead.
+Command: python clusterpeptide.py --i heavy_pepdata.txt --o heavy_pepcluster.txt --metric euclidean --d 0.4
 The --i argument should be the output from step4 (heavy_pepdata.txt), --o argument is the name of output file. There are some other options to use. 
---metric defines the way to calculate the distance, "euclidean" is the default. "correlation" can also be used.
+--metric defines the way to calculate the distance, "correlation" is the default. Other options such as "euclidean" , "cosine" are also available.
+For all available option, check on website http://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.distance.pdist.html?highlight=distance.pdist#scipy.spatial.distance.pdist
 --method defines the way of calculating the distance between the newly formed clusters. Available options is "single","complete","average","weighted". "average" is the default.
 --d set the distance cutoff for generating a new cluster. Default value is 0.4. 
 
@@ -84,6 +95,7 @@ NOTE: if step5 is skipped, the input file of this step is the output of step4, w
 
 Command: Python mapping.py heavy_pepdata.txt heavy (if step5 is skipped)
 Command: Python mapping.py heavy_pepcluster.txt heavy (if step5 is not skipped)
+
 The first argument is input file and the second is the prefix of output file
 Output: heavy_mappingout.txt, heavy_genestatistic.txt
 
