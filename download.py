@@ -1,5 +1,8 @@
 import sys
+import os
+import getopt
 import urllib,urllib2
+import httplib
 from Bio import Entrez,SeqIO
 
 def getuniqacc(infile,i): #get a unique accession id list out of file, i is the ith coloum(start from 0) i the file which contain accession id
@@ -13,10 +16,26 @@ def getuniqacc(infile,i): #get a unique accession id list out of file, i is the 
     return dic;
 ###################Function part end###############################
 
-Entrez.email=raw_input('please provide a valid email address in order to retrieve data from NCBI:(finish by ENTER)\n')
+################  Default  ################
+organism = '9606' #H.sapiens
+
+################  Comand-line arguments ################
+if len(sys.argv[1:])<=1:  ### Indicates that there are insufficient number of command-line arguments
+    print "Warning! wrong command, please read the mannual in Readme.txt."
+    print "Example: python download.py --organism 9606 --prefix heavy --email youremailaddress@XXX"
+else:
+    options, remainder = getopt.getopt(sys.argv[1:],'', ['organism=',
+                                                         'email=',
+                                                         'prefix='])
+    for opt, arg in options:
+        if opt == '--organism': organism=arg
+        elif opt == '--email': Entrez.email=arg
+        elif opt == '--prefix':prefix=arg
+        else:
+            print "Warning! Command-line argument: %s not recognized. Exiting..." % opt; sys.exit()
+
 
 #####################fetch splice variants from EVDB for all genes########
-prefix=sys.argv[1]
 infilename=prefix+'_pepdata.txt'
 pepdatafile=open(infilename,'r')
 genedic=getuniqacc(pepdatafile,0)
@@ -37,8 +56,8 @@ print len(downloadgene),'genes exon composition stored locally'
 
 output_file2=open(subexonfile,'a')
 
-
-output_file3=open('gene_notfound.txt','a')
+file3name=prefix+'_gene_notfound.txt'
+output_file3=open(file3name,'w')
 
 newgene=0
 i=0
@@ -46,7 +65,7 @@ for gene in genedic.keys():
     i+=1
     if gene not in downloadgene:
         values={'queryBy':'Gene',
-                'organism':'9606',
+                'organism':organism,
                 'inputType':'Text',
                 'text':gene,
                 }
@@ -85,14 +104,13 @@ handle_var=open(variantfile,'r')
 vardic=getuniqacc(handle_var,4) #vardic contains all splice variants to be downloaded
 handle_var.close()
 
-print len(vardic),"splice variants to be downloaded"
+print "Downloading sequences of splice variant from NCBI GenBank"
 
 record_dict = SeqIO.index("varseq.fa", "fasta")
-var_download={} #var_download contains all splice variants that have been downloaded previously
+var_download={} #the dictionary contains all splice variants that have been downloaded previously
 for key in record_dict.keys():
 	var_download[key]=1
 
-file4=open('var_notfound.txt','a')
 output_handle=open('varseq.fa','a')
 
 newvar=0
@@ -100,7 +118,7 @@ icount=0
 for var in vardic.keys():
     icount+=1
     if icount%1000==0:
-        print icount,"known splice varaints in this set of genes "
+        print "...",
     if var not in var_download:
         try:
             handle=Entrez.efetch(db='nucleotide',
@@ -139,15 +157,13 @@ for var in vardic.keys():
         except ValueError:
             print var,"not downloaded"
         except urllib2.HTTPError:
-            file4.write('%s\n'%(var))
-            continue ## if HTTPError occurs, continue fetching from next one.
+            print var,"not downloaded"
         except httplib.BadStatusLine:
             time.sleep(1)
-            file4.write('%s\n'%(var))
-            continue	            
+            print var,"not downloaded"
+                        
 
-print len(vardic),"splice variants processed"
-print newvar,'new splice variants sequence downloaded'
+print len(vardic),"splice variants sequences stored locally"
+print newvar,'new splice variants downloaded'
 output_handle.close()
-file4.close()
 print 'varseq.fa\tsaved'

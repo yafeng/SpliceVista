@@ -106,7 +106,7 @@ def main():
             CDS=int(CDR[CDR.index("=")+1:]) #CDS, codon start 
 
             exon_st=CDS+n*3
-            exon_ed=exon_st+3*len(seq)
+            exon_ed=exon_st+3*len(seq)-1
             
             
             index1=pepmap(exon_st,CDR_cor[k])
@@ -247,19 +247,10 @@ if __name__=='__main__':
                'PSM count','unique peptides','exon coverage','identified variants','variants ID']
     output2_handle.write('%s\n'%('\t'.join(headline2)))
 
-    file3=open('gene_notfound.txt','r')
-    notfounddict={}
-    
-    for line in file3:
-        if line[:-1] not in notfounddict:
-            notfounddict[line[:-1]]=1 #get a genelist that are not found in EVDB
-
     icount=0
     for gene in gene_peparray.keys():
         icount+=1
-        if gene in notfounddict:
-            continue;
-        else:
+        if gene in gene_vararray:#if the gene's splice info downloaded
             peparray=gene_peparray[gene]
             vararray=gene_vararray[gene]
             main()

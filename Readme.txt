@@ -1,5 +1,5 @@
 SpliceView
-Author: Yafeng Zhu. Email: yafeng.zhu@scilifelab.se, yafeng.zhu@ki.se
+Developed by Yafeng Zhu. Email: yafeng.zhu@scilifelab.se, yafeng.zhu@ki.se
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files, to deal
@@ -16,7 +16,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 Overview
 SpliceView is a tool for identifcation and visualization of splice variants based on shotgun proteomics data
 
-SpliceView was written in Python 2.7.2. It consists of four scripts: converter.py, download.py, mapping.py and visualization.py. They are compressed into a package. The following python packages need to be installed for SpliceView to work: 
+SpliceView was written in Python 2.7.2. It consists of six scripts: converter.py, mergepsm.py, download.py, clusterpeptide.py, mapping.py and visualization.py. They are compressed into a package. The following python packages need to be installed for SpliceView to work: 
 Biopython
 Python Image Library (PIL)
 numpy
@@ -31,7 +31,7 @@ Note: After you have download SpliceView, DO NOT move or rename original and out
 
 Step1:prepare the input file for SpliceView
 First, you need to extract PSM data from the output file of database searching and format them in a tab-delimited text file like this:
-peptide sequence	Accession	1	2	3	4	5	6	7	8
+peptide sequence	protein_accession	1	2	3	4	5	6	7	8
 nSQDDYDEER	ENSP00000342181	3638.974989     3573.00811      3754.7922       3734.386299     3359.112228     2412.318846     2468.562338     3162.3
 
 *NOTE* In the column with sample tag 1-8, they are the ion intensity from 8-plex iTRAQ labelling.(put the standard or control in the first place, intensity will be normalized in next step.)
@@ -41,15 +41,15 @@ It is ok to have multiple IDs in the Accession column, but it has to be separate
 	
 Here, we will use the heavy_testfile.txt file (a tab-delimited text file described as in step1) to illustrate the workflow.
 
-Step2:insert gene symbol for each PSM- ensembl-converter.py (use ensembl-converter.py for ENSP protein accession, or unipro-converter.py for uniprot protein accession)
-Read and insert gene symbol for each PSM. Each protein accession will be assigned a gene symbol which will be used to retrieve its known splice variants in the next step. This is done by converter.py.
+Step2:insert gene symbol for each PSM- converter.py
+insert gene symbol for each PSM. Each protein accession will be assigned a gene symbol which will be used to retrieve its known splice variants in the next step. This is done by converter.py.
 
 Command: Python converter.py --i heavy_testfile.txt --prefix heavy --database ensembl --n 2
 
-The first argument --i is the input file, the second is the prefix of output file. Given the prefix in the example, you will get an output file named as heavy_psmdata.txt. --database specify the database was used to search peptide spectra, --n has three options for normalization: if 0, no normalization is performed, if n is given 1 or 2, intensity will be normalized in method 1 or 2
+The first argument --i is the input file, the second is the prefix of output file. Given the prefix in the example, you will get an output file named as heavy_psmdata.txt. --database specify the database was used to search peptide spectra, ensembl, uniprot and IPI can be chosen. --n has three options for normalization: if 0, no normalization is performed, if n is given 1 or 2, intensity will be normalized in method 1 or 2, see below for method
 
 use --n 0 when intensity of peptides are already normalized in input files.
-To calculate the relative intensity of each PSM, the intensity of PSM in each sample is normalized by the intensity of the standard or control using the following fomula:
+
 normalization method 1: 
 X(relative intensity)=intensity of X/intensity of sample1, 
 usually used when sample1 is standard or control. X=1,2,3…
@@ -57,37 +57,56 @@ normalization method 2:
 X(relative intensity)=intensity of X/mean of intensity of sample1 and sample2, 
 usually used when sample1 and sample2 are two replicates in  control sample. X=1,2,3…
   
-Step3: merge PSMs for same peptide sequence into one, calculate the mean of relative intensity and standard deviation of PSMs
+Step3: group PSMs into peptides, calculate the mean of relative intensity and standard deviation of PSMs
 Then for each peptide, calculate the mean of all PSMs' relative intensity and the standard deviation.
 
 Command: Python mergepsm.py heavy
 output: heavy_pepdata.txt
 
-use the same prefix in previous step to group PSMs into peptides, intensity of peptide is the mean of all the peptides PSM's relative intensity, standard deviation is calculated.
+use the same prefix in previous step to group PSMs into peptides, relative intensity of peptide is the mean of all the peptides PSM's relative intensity, standard deviation is calculated.
 Before clusterpeptide.py is used, all peptides will be assigned to cluster 0.
 
 Step4: Download data from EVDB and GenBank - download.py 
 The script in this step retrieves splice variants in EVDB by gene symbol and the translated sequences of these splice variants in GenBank.
 
-Command: Python download.py heavy
+Command: Python download.py --prefix heavy --organism 9606 --email your_email_address
+Currently, nine species below are available to choose to search splice variant in EVDB.
+        organism="3702">A. thaliana
+               
+	organism="9913">B. taurus 
+               
+	organism="6239">C. elegans
+               
+	organism="7227">D. melanogaster
+               
+	organism="7955">D. rerio
+               
+	organism="9606">H. sapiens (default) 
+               
+	organism="10090">M. musculus 
+               
+	organism="39947">O. sativa 
+               
+	organism="10116">R. norvegicus 
 
-use the same prefix in previous step to download splice variant information from database
-(you will asked to type in a valid email in order to access NCBI database)
-Output: splicingvar.txt, subexon.txt, varseq.fa, gene_notfound.txt, var_notfound.txt.
 
-The output files splicingvar.txt and subexon.txt contain exon composition of each variant, both genomic and transcript coordinates. The gene_notfound.txt file contains gene symbol which is not found in the splicing variants database. The var_notfound.txt file contains mRNA accession id of splice variants that is not found in GenBank.
+use the same prefix in previous step and provide a valid email address to access NCBI GenBank.
+Output: splicingvar.txt, subexon.txt, varseq.fa, gene_notfound.txt.
+Note: DO NOT download splice variants for different species under the same directory, or files will be overwritten. In SpliceView Package, splicingvar.txt, subexon.txt, varseq.fa are already downloaded for human species.
 
-Tip: if you have multiple sample files in one project, it is better to put all the files under one directory named by the project and use different sample names for each file. Because usually there is a overlap of identified proteins among different samples, the script download.py first check if the splice variants of identified protein and the variant sequences have been downloaded so that it avoids downloading the data for same proteins multiple times. 
+The output files splicingvar.txt and subexon.txt contain exon composition of each variant, both genomic and transcript coordinates. The gene_notfound.txt file contains gene symbol which is not found in the splicing variants database. Occasionally, some variants are not downloaded successfully (will be printed on the terminal) due to certain HTTP Error, normally it will be downloaded if you just run this step again.  
+
+Tips: If you have multiple sample files in one project, it is better to put all the files under one directory named by the project and use different sample names for each file. Because usually there is a overlap of identified proteins among different samples, the script download.py first check if the splice variants of identified protein and the variant sequences have been downloaded so that it avoids downloading the data for same proteins multiple times. 
 This step will take a while depending the number of new splice variant to be downloaded from the database.
 
-Step5: clusterpeptide.py
+Step5 (optional): clusterpeptide.py 
 This step mimics the PQPQ algorithm but much simplified. It only does the peptide clustering which groups peptides based on their relative intensity pattern over samples, each peptide will be assigned a number to indicate which cluster it belongs. If one protein has only one unique peptide, then this peptide will get a cluster '0'  instead.
 Command: python clusterpeptide.py --i heavy_pepdata.txt --o heavy_pepcluster.txt --metric euclidean --d 0.4
 The --i argument should be the output from step4 (heavy_pepdata.txt), --o argument is the name of output file. There are some other options to use. 
 --metric defines the way to calculate the distance, "correlation" is the default. Other options such as "euclidean" , "cosine" are also available.
 For all available option, check on website http://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.distance.pdist.html?highlight=distance.pdist#scipy.spatial.distance.pdist
 --method defines the way of calculating the distance between the newly formed clusters. Available options is "single","complete","average","weighted". "average" is the default.
---d set the distance cutoff for generating a new cluster. Default value is 0.4. 
+--d set the distance cutoff for generating a new cluster. Default is 0.4. 
 
 Step6: Map peptides to its transcriptional position - mapping.py
 The script in this step maps identified peptides to its transcriptional positions. 
@@ -98,13 +117,13 @@ Command: Python mapping.py heavy_pepcluster.txt heavy (if step5 is not skipped)
 
 The first argument is input file and the second is the prefix of output file
 Output: heavy_mappingout.txt, heavy_genestatistic.txt
-
 The file mappingout.txt is peptide based format in which each row is one unique peptide. This file will be used for visualization. The file genestatistic.txt is gene based format in which each row is one gene.
 The content of these two output files can be seen in supplementary table 1 and 2. 
+If you encounter KeyError (with a splice variant ID), please run step4 again.
 
 Step7: Create figure - visualization.py The script is used to visualize the gene of interest. Given a gene symbol, it will generate a high quality picture which contains the exon composition of known splice variants, transcriptional positions of identified peptides and quantitative patterns of peptides in each cluster.
 
 Command: Python visualization.py heavy ARF5
 Output:ARF5_pattern_heavy.png
 
-The gene symbol should be exactly the same as the one you see in the file genestatistic.txt
+Always specify prefix first and then the gene you would like to plot. Gene symbol should be exactly the same as the one you see in the file genestatistic.txt

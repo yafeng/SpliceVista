@@ -4,26 +4,26 @@ import numpy
 def getpep(array): #this function is to find unique peptides in the psmarray
     dic={}
     for i in range(0,len(array)):
-        pep=array[i][2].upper()
+        pep=array[i][0].upper()
         if pep not in dic:
             dic[pep]=1
-    return dic.keys()
+    return dic
 
 
 def main():
-    peplist=getpep(genearray)
-    for i in range(0,len(peplist)):
-        pep=peplist[i]
+    pepdic=getpep(genearray)
+    for pep in pepdic.keys():
         pepratio=[]
         for j in range(0,len(genearray)):
-            if genearray[j][2].upper()==pep:
+            if genearray[j][0].upper()==pep:
                 pepratio.append(genearray[j][3:])
 
         a=numpy.array(pepratio,dtype=float)
         mean=numpy.mean(a,axis=0)
-        mean_round=[ '%.2f' % elem for elem in mean ]
         stdv=numpy.std(a,axis=0)
-        stdv_round=[ '%.2f' % elem for elem in stdv ]
+    
+        mean_round=[ '%.3f' % elem for elem in mean ]
+        stdv_round=[ '%.3f' % elem for elem in stdv ]
 
         newline="%s\t%s\t%i\t%s\t%s\t%s\n" % (gene,pep,len(a),','.join(mean_round),
                                       ','.join(stdv_round),'0')
@@ -45,7 +45,9 @@ if __name__=='__main__':
     for line in handle:
         row=line[:-1].split("\t")
         gene=row[1]
-        if ";" in gene: # this will discard PSMs with ambiguous identity
+        if gene=="None":#this will discard PSMs with unknown identity
+            continue;
+        elif ";" in gene: # this will discard PSMs with multiple gene identities
             continue;
         else:
             if gene not in gene_psmarray:

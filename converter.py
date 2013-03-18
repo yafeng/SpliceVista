@@ -3,18 +3,33 @@ import os
 import getopt
 
 def normalize1(lis):
+    numerize(lis)
     newlis=[]
     for i in range(0,len(lis)):
-        normvalue=float(lis[i])/float(lis[0])
-        newlis.append(normvalue)
+        try:
+            normvalue=float(lis[i])/float(lis[0])
+        except ZeroDivisionError:
+            newlis=lis
+            break
     
     return newlis
 
+def numerize(lis): #convert "" to 0 in a list
+    for i in range(0,len(lis)): 
+        if lis[i]=='':
+            lis[i]=0 
+    
+
 def normalize2(lis):
+    numerize(lis)
     newlis=[]
     for i in range(0,len(lis)):
-        normvalue=2*float(lis[i])/(float(lis[0])+float(lis[1]))
-        newlis.append(normvalue)
+        try:
+            normvalue=2*float(lis[i])/(float(lis[0])+float(lis[1]))
+            newlis.append(normvalue)
+        except ZeroDivisionError:
+            newlis=lis
+            break
     
     return newlis
 
@@ -43,7 +58,7 @@ def main():
 if __name__=='__main__':
     ################  Default  ################
     database = 'ensembl'
-    n='0'
+    n='0' #normalization option
     
     ################  Comand-line arguments ################
     if len(sys.argv[1:])<=1:  ### Indicates that there are insufficient number of command-line arguments
@@ -105,14 +120,14 @@ if __name__=='__main__':
     if n=="0":
         for line in infile2:
             cols=line.split('\t')
-            proteinID=cols[0]
+            proteinID=cols[1]
             cols.insert(1,acclist[proteinID])
-            outfile.write("\t".join(cols)+'\n')
+            outfile.write("\t".join(cols))
             
     elif n=="1":
         for line in infile2:
-            cols=line.split('\t')
-            proteinID=cols[0]
+            cols=line[:-1].split('\t')
+            proteinID=cols[1]
             intensity=cols[2:]
             ratio=normalize1(intensity)
             ratio_round=[ '%.3f' % elem for elem in ratio ] #round the value, keep 3 digit after decimal
@@ -123,8 +138,8 @@ if __name__=='__main__':
 
     elif n=="2":
         for line in infile2:
-            cols=line.split('\t')
-            proteinID=cols[0]
+            cols=line[:-1].split('\t')
+            proteinID=cols[1]
             intensity=cols[2:]
             ratio=normalize2(intensity)
             ratio_round=[ '%.3f' % elem for elem in ratio ] #round the value, keep 3 digit after decimal

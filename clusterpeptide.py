@@ -54,7 +54,7 @@ if __name__=='__main__':
             else:
                 print "Warning! Command-line argument: %s not recognized. Exiting..." % opt; sys.exit()
     
-    print metric,"metric is used to measure the distance of elements"
+    print metric,"metric is used"
     print "distance cutoff to form a new cluster is",distance
 
     handle=open(infilename,'r')
