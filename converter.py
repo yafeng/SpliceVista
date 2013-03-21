@@ -3,22 +3,17 @@ import os
 import getopt
 
 def normalize1(lis):
-    numerize(lis)
     newlis=[]
     for i in range(0,len(lis)):
         try:
             normvalue=float(lis[i])/float(lis[0])
-        except ZeroDivisionError:
-            newlis=lis
-            break
+            newlis.append(normvalue)
+        except ValueError:
+            print "non numeric value found "
+            sys.exit()
     
     return newlis
 
-def numerize(lis): #convert "" to 0 in a list
-    for i in range(0,len(lis)): 
-        if lis[i]=='':
-            lis[i]=0 
-    
 
 def normalize2(lis):
     numerize(lis)
@@ -27,10 +22,10 @@ def normalize2(lis):
         try:
             normvalue=2*float(lis[i])/(float(lis[0])+float(lis[1]))
             newlis.append(normvalue)
-        except ZeroDivisionError:
-            newlis=lis
-            break
-    
+        except ValueError:
+            print "non numeric value found "
+            sys.exit()
+
     return newlis
 
 def main():

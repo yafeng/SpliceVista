@@ -16,7 +16,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 Overview
 SpliceView is a tool for identifcation and visualization of splice variants based on shotgun proteomics data
 
-SpliceView was written in Python 2.7.2. It consists of six scripts: converter.py, mergepsm.py, download.py, clusterpeptide.py, mapping.py and visualization.py. They are compressed into a package. The following python packages need to be installed for SpliceView to work: 
+SpliceView was written in Python 2.7.2. It contains six python scripts: converter.py, mergepsm.py, download.py, clusterpeptide.py, mapping.py and visualization.py. The following python packages need to be installed for SpliceView to work: 
 Biopython
 Python Image Library (PIL)
 numpy
@@ -44,12 +44,11 @@ Here, we will use the heavy_testfile.txt file (a tab-delimited text file describ
 Step2:insert gene symbol for each PSM- converter.py
 insert gene symbol for each PSM. Each protein accession will be assigned a gene symbol which will be used to retrieve its known splice variants in the next step. This is done by converter.py.
 
-Command: Python converter.py --i heavy_testfile.txt --prefix heavy --database ensembl --n 2
+Command: Python converter.py --i heavy_testfile.txt --prefix heavy --database ensembl/Users/yafengzhu/Documents/backup_stuff/Spliceview Project/code/Readme.txt --n 2
 
 The first argument --i is the input file, the second is the prefix of output file. Given the prefix in the example, you will get an output file named as heavy_psmdata.txt. --database specify the database was used to search peptide spectra, ensembl, uniprot and IPI can be chosen. --n has three options for normalization: if 0, no normalization is performed, if n is given 1 or 2, intensity will be normalized in method 1 or 2, see below for method
 
-use --n 0 when intensity of peptides are already normalized in input files.
-
+use --n 0 when intensity of peptides are already normalized in input files. Note: If you want to use the visualization function in which peptides quantitative pattern will be shown, you have to normalize the data either by yourself or by the following provided method.
 normalization method 1: 
 X(relative intensity)=intensity of X/intensity of sample1, 
 usually used when sample1 is standard or control. X=1,2,3…
@@ -92,9 +91,9 @@ Currently, nine species below are available to choose to search splice variant i
 
 use the same prefix in previous step and provide a valid email address to access NCBI GenBank.
 Output: splicingvar.txt, subexon.txt, varseq.fa, gene_notfound.txt.
-Note: DO NOT download splice variants for different species under the same directory, or files will be overwritten. In SpliceView Package, splicingvar.txt, subexon.txt, varseq.fa are already downloaded for human species.
+Note: DO NOT download splice variants for different species under the same directory, or files will be overwritten. In SpliceView Package contains three empty files splicingvar.txt, subexon.txt, varseq.fa that will store downloaded splice variant info.
 
-The output files splicingvar.txt and subexon.txt contain exon composition of each variant, both genomic and transcript coordinates. The gene_notfound.txt file contains gene symbol which is not found in the splicing variants database. Occasionally, some variants are not downloaded successfully (will be printed on the terminal) due to certain HTTP Error, normally it will be downloaded if you just run this step again.  
+After download is completed, splicingvar.txt and subexon.txt contain exon composition of each variant, both genomic and transcript coordinates. The gene_notfound.txt file contains gene symbol which is not found in the splicing variants database. Occasionally, some variants are not downloaded successfully (will be printed on the terminal) due to certain HTTP Error, normally it will be downloaded if you just run this step again.  
 
 Tips: If you have multiple sample files in one project, it is better to put all the files under one directory named by the project and use different sample names for each file. Because usually there is a overlap of identified proteins among different samples, the script download.py first check if the splice variants of identified protein and the variant sequences have been downloaded so that it avoids downloading the data for same proteins multiple times. 
 This step will take a while depending the number of new splice variant to be downloaded from the database.
@@ -114,15 +113,14 @@ NOTE: if step5 is skipped, the input file of this step is the output of step4, w
 
 Command: Python mapping.py heavy_pepdata.txt heavy (if step5 is skipped)
 Command: Python mapping.py heavy_pepcluster.txt heavy (if step5 is not skipped)
+If you encounter KeyError, please run step4 again.
 
 The first argument is input file and the second is the prefix of output file
 Output: heavy_mappingout.txt, heavy_genestatistic.txt
 The file mappingout.txt is peptide based format in which each row is one unique peptide. This file will be used for visualization. The file genestatistic.txt is gene based format in which each row is one gene.
 The content of these two output files can be seen in supplementary table 1 and 2. 
-If you encounter KeyError (with a splice variant ID), please run step4 again.
 
-Step7: Create figure - visualization.py The script is used to visualize the gene of interest. Given a gene symbol, it will generate a high quality picture which contains the exon composition of known splice variants, transcriptional positions of identified peptides and quantitative patterns of peptides in each cluster.
-
+Step7: Create figure - visualization.py The script is used to visualize the gene of interest. Given a gene symbol, it will generate a high quality picture which contains the exon composition of known splice variants, transcriptional positions of identified peptides and quantitative patterns of peptides in each cluster. 
 Command: Python visualization.py heavy ARF5
 Output:ARF5_pattern_heavy.png
 

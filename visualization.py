@@ -203,7 +203,7 @@ im=Image.new('RGBA',(setwidth,setheight),'#eee')
 draw=ImageDraw.Draw(im)
 
 font=ImageFont.truetype("Noxchi_Arial.ttf",30)
-font2=ImageFont.truetype("Noxchi_Arial.ttf",16)
+font2=ImageFont.truetype("Noxchi_Arial.ttf",20)
 
 
 exoncor=[] #this list will store starting cordinates of exons 
