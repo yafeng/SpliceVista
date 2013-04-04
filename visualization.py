@@ -199,7 +199,7 @@ setwidth2=400+230*maxuniq
 print setwidth1,setwidth2
 setwidth=max(setwidth1,setwidth2)
 
-im=Image.new('RGBA',(setwidth,setheight),'#eee')    
+im=Image.new('RGB',(setwidth,setheight),'#eee')    
 draw=ImageDraw.Draw(im)
 
 font=ImageFont.truetype("Noxchi_Arial.ttf",30)
@@ -337,7 +337,7 @@ for i in range(0,len(uniq_cluster)):
         draw.text((barstart+50,y4),xlabel,font=font2,fill='black')
 
 ###draw mapped peptide on the transcript######
-im2=Image.new('RGBA',(setwidth,setheight),'#eee')    
+im2=Image.new('RGB',(setwidth,setheight),'#eee')    
 draw2=ImageDraw.Draw(im2)
 
 for k in range(0,len(var)):

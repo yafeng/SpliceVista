@@ -16,7 +16,6 @@ def normalize1(lis):
 
 
 def normalize2(lis):
-    numerize(lis)
     newlis=[]
     for i in range(0,len(lis)):
         try:

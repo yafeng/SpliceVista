@@ -14,6 +14,27 @@ def getuniqacc(infile,i): #get a unique accession id list out of file, i is the 
             dic[acc]=1
     
     return dic;
+
+def getTrans_Start(var):
+    query=">"+var+"\n"+sequence
+    values={'queryBy':'Protein',
+        'organism':organism,
+        'inputType':'Text',
+        'text':query,
+    }
+    
+    data=urllib.urlencode(values)
+    response=urllib.urlopen(url+data)
+    response.readline()
+    s=response.read()
+    if s[0:10]=='No results':
+        pass       
+    else:
+        exon1=s.split("\n")[0]
+        start_trans=exon1.split("\t")[12]
+    
+    return start_trans
+
 ###################Function part end###############################
 
 ################  Default  ################
@@ -139,12 +160,13 @@ for var in vardic.keys():
                 codon_end=seq_feature.location.nofuzzy_end
                 try:
                     sequence=seq_feature.qualifiers['translation'][0]
-                    
-                    output_handle.write(">%s %s|codon_start=%s|codon_end=%s\n%s\n" % (var,record.description,str(codon_start),str(codon_end),sequence))
+                    trans_st=getTrans_Start(var)
+                    output_handle.write(">%s %s|codon_start=%s|codon_end=%s|Start(Trans)=%s\n%s\n" % (var,record.description,str(codon_start),str(codon_end),trans_st,sequence))
                     newvar+=1
                 except KeyError: #if there is no annotated translation(often occurs when this is a pseudogene), then translate the nucleotide sequence into amino acids.
                     sequence=str(seq_feature.extract(record.seq).translate()) #extract CDS region and translate into amino acids
-                    output_handle.write(">%s %s|codon_start=%s|codon_end=%s\n%s\n" % (var,record.description,str(codon_start),str(codon_end),sequence))
+                    trans_st=getTrans_Start(var)
+                    output_handle.write(">%s %s|codon_start=%s|codon_end=%s|Start(Trans)=%s\n%s\n" % (var,record.description,str(codon_start),str(codon_end),trans_st,sequence))
                     newvar+=1
             else:
                 x=seqtype.index('source')
@@ -152,7 +174,8 @@ for var in vardic.keys():
                 codon_start=seq_feature.location.nofuzzy_start+1 #traslation starts from the first nucleotide 
                 codon_end=seq_feature.location.nofuzzy_end
                 sequence=str(seq_feature.extract(record.seq).translate())
-                output_handle.write(">%s %s|codon_start=%s|codon_end=%s\n%s\n" % (var,record.description,str(codon_start),str(codon_end),sequence))
+                trans_st=getTrans_Start(var)
+                output_handle.write(">%s %s|codon_start=%s|codon_end=%s|Start(Trans)=%s\n%s\n" % (var,record.description,str(codon_start),str(codon_end),trans_st,sequence))
                 newvar+=1
         except ValueError:
             print var,"not downloaded"
