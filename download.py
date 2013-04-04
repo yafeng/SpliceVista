@@ -30,8 +30,12 @@ def getTrans_Start(var):
     if s[0:10]=='No results':
         pass       
     else:
-        exon1=s.split("\n")[0]
-        start_trans=exon1.split("\t")[12]
+        lines=s.split("\n")
+        for i in range(0,len(lines)):
+            row=lines[i].split("\t")
+            if row[4]==var:
+                start_trans=row[12]
+                break
     
     return start_trans
 
