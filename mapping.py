@@ -92,20 +92,28 @@ def main():
         seq=peparray[j][1]
         num=0 #count how many known variants the peptide mapped to
         MTV.append([])
+        k=0
+        CDS=""
         for i in range(0,len(var)):
             m=str(record_dict[var[i]].seq).find(seq)
             if m!=-1:
                 num=num+1
                 MTV[j].append(var[i])
-                k=i
-                n=m;
+                n=m
+                CDR=record_dict[var[i]].description.split('|')[3]
+                CDS=CDR[CDR.index("=")+1:]
+                if CDR[-1]!="=":
+                    k=i
 
         NOMV.append(num)
         if num!=0:# if the peptide map to one of splicing variants
             CDR=record_dict[var[k]].description.split('|')[3]
-            CDS=int(CDR[CDR.index("=")+1:]) #CDS, trans start 
-
-            exon_st=CDS+n*3
+            CDS=CDR[CDR.index("=")+1:] #CDS, trans start 
+            if CDS=="":
+                CDR=record_dict[var[k]].description.split('|')[1]
+                CDS=CDR[CDR.index("=")+1:]
+            
+            exon_st=int(CDS)+n*3
             exon_ed=exon_st+3*len(seq)-1
             
             

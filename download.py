@@ -16,6 +16,7 @@ def getuniqacc(infile,i): #get a unique accession id list out of file, i is the 
     return dic;
 
 def getTrans_Start(var):
+    start_trans=""
     query=">"+var+"\n"+sequence
     values={'queryBy':'Protein',
         'organism':organism,
@@ -33,9 +34,12 @@ def getTrans_Start(var):
         lines=s.split("\n")
         for i in range(0,len(lines)):
             row=lines[i].split("\t")
-            if row[4]==var:
-                start_trans=row[12]
-                break
+            try:
+                if row[4]==var:
+                    start_trans=row[12]
+                    break
+            except IndexError:
+                print var,"Start(Trans) empty"
     
     return start_trans
 
@@ -143,7 +147,7 @@ icount=0
 for var in vardic.keys():
     icount+=1
     if icount%1000==0:
-        print "...",
+        print i,"splice variants processed"
     if var not in var_download:
         try:
             handle=Entrez.efetch(db='nucleotide',
@@ -181,6 +185,8 @@ for var in vardic.keys():
                 trans_st=getTrans_Start(var)
                 output_handle.write(">%s %s|codon_start=%s|codon_end=%s|Start(Trans)=%s\n%s\n" % (var,record.description,str(codon_start),str(codon_end),trans_st,sequence))
                 newvar+=1
+        except IndexError:
+            var,"Start(Trans) empty"
         except ValueError:
             print var,"not downloaded"
         except urllib2.HTTPError:
