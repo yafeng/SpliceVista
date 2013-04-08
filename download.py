@@ -147,7 +147,7 @@ icount=0
 for var in vardic.keys():
     icount+=1
     if icount%1000==0:
-        print i,"splice variants processed"
+        print icount,"splice variants processed"
     if var not in var_download:
         try:
             handle=Entrez.efetch(db='nucleotide',
