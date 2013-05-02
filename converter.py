@@ -47,7 +47,7 @@ def main():
         
         N=N+1
         if N%1000==0:
-            print N,'proteins processed'
+            print N,'protein groups processed'
     
 if __name__=='__main__':
     ################  Default  ################

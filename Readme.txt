@@ -35,16 +35,16 @@ peptide sequence	protein_accession	1	2	3	4	5	6	7	8
 nSQDDYDEER	ENSP00000342181	3638.974989     3573.00811      3754.7922       3734.386299     3359.112228     2412.318846     2468.562338     3162.3
 
 *NOTE* In the column with sample tag 1-8, they are the ion intensity from 8-plex iTRAQ labelling.(put the standard or control in the first place, intensity will be normalized in next step.)
-number of sample can vary, if label free method is used for quantification, precusor area or PSM count can be put in as value. In the end, they will be normalized as well.
-Tip: copy and paste the needed columns in EXCEL, and then copy and save it in a plain text file.
+number of sample can vary, if label free method is used for quantification, precursor area or PSM count can be put in as value. In the end, they will be normalized as well.
+Tip: copy and paste the needed columns in EXCEL, and then copy and save it in a tab-delimited text file.
 It is ok to have multiple IDs in the Accession column, but it has to be separated by semicomma (;) symbol. Peptide sequence can contain letters in lower case.
 	
-Here, we will use the heavy_testfile.txt file (a tab-delimited text file described as in step1) to illustrate the workflow.
+Here, we will use the heavy_testfile.txt file (a tab-delimited text file as described in step1) to illustrate the workflow.
 
 Step2:insert gene symbol for each PSM- converter.py
 insert gene symbol for each PSM. Each protein accession will be assigned a gene symbol which will be used to retrieve its known splice variants in the next step. This is done by converter.py.
 
-Command: Python converter.py --i heavy_testfile.txt --prefix heavy --database ensembl/Users/yafengzhu/Documents/backup_stuff/Spliceview Project/code/Readme.txt --n 2
+Command: Python converter.py --i heavy_testfile.txt --prefix heavy --database ensembl --n 2
 
 The first argument --i is the input file, the second is the prefix of output file. Given the prefix in the example, you will get an output file named as heavy_psmdata.txt. --database specify the database was used to search peptide spectra, ensembl, uniprot and IPI can be chosen. --n has three options for normalization: if 0, no normalization is performed, if n is given 1 or 2, intensity will be normalized in method 1 or 2, see below for method
 
@@ -57,7 +57,6 @@ X(relative intensity)=intensity of X/mean of intensity of sample1 and sample2,
 usually used when sample1 and sample2 are two replicates in  control sample. X=1,2,3…
   
 Step3: group PSMs into peptides, calculate the mean of relative intensity and standard deviation of PSMs
-Then for each peptide, calculate the mean of all PSMs' relative intensity and the standard deviation.
 
 Command: Python mergepsm.py heavy
 output: heavy_pepdata.txt

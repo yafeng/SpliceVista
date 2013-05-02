@@ -88,8 +88,8 @@ def main():
     CDR_cor=Exon_cor(var,vararray)
     
     for j in range(0,len(peparray)):
-        pep_cluster.append(int(peparray[j][5]))
-        seq=peparray[j][1]
+        pep_cluster.append(int(peparray[j][-1]))
+        seq=peparray[j][0]
         num=0 #count how many known variants the peptide mapped to
         MTV.append([])
         k=0
@@ -163,9 +163,9 @@ def main():
     var_identified={} #store the ID of identified splice variants for this gene
     gene_psmcount=0
     for i in range(0,len(peparray)):
-        pep=peparray[i][1]
-        gene_psmcount+=int(peparray[i][2])
-        pepratio=peparray[i][3]
+        pep=peparray[i][0]
+        gene_psmcount+=int(peparray[i][3])
+        pepratio=peparray[i][4]
         s1=str(len(pep))
         s2=str(len(uniq_cluster))
         s3=str(len(var))
@@ -180,13 +180,8 @@ def main():
                 var_identified[s5]=1
 
         peplabel=str(uniqpep[pep])
-        line="%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" % (gene,pep,
-                peplabel,s1,peparray[i][2],pepratio,peparray[i][5],peparray[i][4],
+        line="%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" % (pep,peplabel,s1,"\t".join(peparray[i][1:]),
                 s2,s3,s4,s5,s6,s7,s8,s9)
-
-       
-        peplabel=str(uniqpep[pep])
-
         
         output_handle.write(line)
 
@@ -214,7 +209,7 @@ if __name__=='__main__':
     gene_peparray={}
     for line in input_file:
         row=line[:-1].split("\t")
-        gene=row[0]
+        gene=row[1]
         if gene not in gene_peparray:
             gene_peparray[gene]=[row]
         else:
@@ -230,7 +225,7 @@ if __name__=='__main__':
     gene_vararray={}
     for line in handle:
         row=line[:-1].split("\t")
-        gene=row[0]
+        gene=row[1]
         if gene not in gene_vararray:
             gene_vararray[gene]=[row]
         else:
@@ -243,9 +238,9 @@ if __name__=='__main__':
     output2=prefix+'_genestatistics.txt'
     
     output_handle=open(output1,'w')
-    headline1=['gene symbol','peptide sequence','peptide label',
-               'peptide length','PSM count','foldchange','PQPQ cluster',
-               'standard_dev',
+    headline1=['peptide sequence','peptide numbering',
+               'peptide length','gene symbol','protein accession','PSM count','ratio',
+               'standard_dev','PQPQ cluster',
                'detected clusters NO.','known variants NO.','NOMV',
                'known variants peptide is mapped to','chr_start','chr_end',
                'exon_start','exon_end']

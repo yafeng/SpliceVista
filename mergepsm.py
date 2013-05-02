@@ -21,11 +21,11 @@ def main():
         a=numpy.array(pepratio,dtype=float)
         mean=numpy.mean(a,axis=0)
         stdv=numpy.std(a,axis=0)
-    
+
         mean_round=[ '%.3f' % elem for elem in mean ]
         stdv_round=[ '%.3f' % elem for elem in stdv ]
-
-        newline="%s\t%s\t%i\t%s\t%s\t%s\n" % (gene,pep,len(a),','.join(mean_round),
+        ensp=pep_ensp[pep]
+        newline="%s\t%s\t%s\t%i\t%s\t%s\t%s\n" % (pep,gene,ensp,len(a),','.join(mean_round),
                                       ','.join(stdv_round),'0')
         output.write(newline)
         
@@ -34,7 +34,7 @@ if __name__=='__main__':
     infilename=prefix+'_psmdata.txt'
     handle=open(infilename,'r')
     handle.readline()
-    newheader=['gene','pep','PSM count','ratio','standard_dev','cluster']
+    newheader=['pep','gene symbol','protein accession','PSM count','ratio','standard_dev','cluster']
     firstline='\t'.join(newheader)+'\n'
     
     outfilename=prefix+'_pepdata.txt'
@@ -42,9 +42,13 @@ if __name__=='__main__':
     output.write(firstline)
     
     gene_psmarray={}
+    pep_ensp={}
     for line in handle:
         row=line[:-1].split("\t")
+        pep=row[0].upper()
         gene=row[1]
+        ensp=row[2]
+        pep_ensp[pep]=ensp
         if gene=="None":#this will discard PSMs with unknown identity
             continue;
         elif ";" in gene: # this will discard PSMs with multiple gene identities

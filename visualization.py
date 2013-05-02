@@ -16,7 +16,7 @@ def extract(gene,infile):#extract splicevariant, subexon info for one gene
 def extractmap(gene,infile):#extract mappingout info for one gene
     array=[]
     for line in infile:
-        if line.split('\t')[0]==gene:
+        if line.split('\t')[3]==gene:
             array.append(line[:-1].split('\t'));
 
     return array  
@@ -110,7 +110,7 @@ def getcolor(string,lis1,colorlist):
     return colorlist[i];
 
 def drawxy(ymax):#ymax is the maximum peptide ratio
-    draw.text((100,axis_start),'Foldchange',font=font,fill='black')
+    draw.text((100,axis_start),'ratio',font=font,fill='black')
     draw.rectangle([350,axis_start,360,axis_start+100*ymax],fill='black',outline='black')
     draw.rectangle([360,axis_start+100*ymax,setwidth-200,axis_start+100*ymax-10],fill='black',outline='black')
     for i in range(1,ymax+1):# draw grid on y axis
@@ -121,8 +121,8 @@ def drawxy(ymax):#ymax is the maximum peptide ratio
 
 def histogram(pep,cluster):
     for i in range(0,len(array2)):
-        if array2[i][1]==pep:
-            a=[array2[i][5].split(','),array2[i][7].split(',')]
+        if array2[i][0]==pep:
+            a=[array2[i][6].split(','),array2[i][7].split(',')]
             b=numpy.array(a,dtype=float)
             pattern=numpy.transpose(b)
     if cluster!=0:
@@ -166,9 +166,9 @@ var_cluster=[]
 quanti=[]
 pep_psmcount={}
 for i in range(0,len(array2)):
-    var_cluster.append(int(array2[i][6])); #get a list of clusterred result 
-    quanti.append(max(array2[i][5].split(',')))
-    pep_psmcount[array2[i][1]]=array2[i][4]
+    var_cluster.append(int(array2[i][8])); #get a list of clusterred result 
+    quanti.append(max(array2[i][6].split(',')))
+    pep_psmcount[array2[i][0]]=array2[i][5]
 
 
 start=400
@@ -186,8 +186,8 @@ for i in range(0,len(uniq_cluster)):
     clus=uniq_cluster[i]
     psm=[]
     for i in range(0,len(array2)):
-        if int(array2[i][6])==clus:
-            psm.append(array2[i][1])
+        if int(array2[i][8])==clus:
+            psm.append(array2[i][0])
 
     countuniqpep=len(psm)
     #print countuniqpep
@@ -290,24 +290,24 @@ for i in range(0,len(uniq_cluster)):
 
 
 for i in range(0,len(array2)):  #draw peptides for each cluster
-    if array2[i][11]=='':
+    if array2[i][12]=='':
         continue;
-    if int(array2[i][6])!=0:
-        color=getcolor(int(array2[i][6]),uniq_cluster,colorlist)
+    if int(array2[i][8])!=0:
+        color=getcolor(int(array2[i][8]),uniq_cluster,colorlist)
     else:
         color='white'
         
-    exon1=int(array2[i][14])
-    exon2=int(array2[i][15])
-    stx1=abs(int(array2[i][12])-startcor[exon1-1])+exonstart[exon1-1]
-    stx2=abs(int(array2[i][13])-startcor[exon2-1])+exonstart[exon2-1]
-    k1=uniq_cluster.index(int(array2[i][6]))
+    exon1=int(array2[i][15])
+    exon2=int(array2[i][16])
+    stx1=abs(int(array2[i][13])-startcor[exon1-1])+exonstart[exon1-1]
+    stx2=abs(int(array2[i][14])-startcor[exon2-1])+exonstart[exon2-1]
+    k1=uniq_cluster.index(int(array2[i][8]))
     y2=bottom+60*k1
     draw.rectangle([start+stx1,y2,start+stx2,y2+10],fill=color,outline=color)
-    pepNO=array2[i][2]
+    pepNO=array2[i][1]
     draw.text((start+stx1,y2+10),pepNO,font=font2,fill='black')
-    if int(array2[i][10])==1 and int(array2[i][9])>1:
-        k2=var.index(array2[i][11])
+    if int(array2[i][11])==1 and int(array2[i][10])>1:
+        k2=var.index(array2[i][12])
         Y=160+k2*60
         draw.text((10,Y),var[k2]+'(*)',font=font,fill='black')
 
@@ -322,9 +322,9 @@ for i in range(0,len(uniq_cluster)):
     draw.text((100,(y4+axis_start)/2),'cluster'+str(cluster),font=font,fill='black')
     pep_label={}
     for i in range(0,len(array2)):
-        if int(array2[i][6])==cluster:
-            pep=array2[i][1]
-            pep_label[pep]=int(array2[i][2])
+        if int(array2[i][8])==cluster:
+            pep=array2[i][0]
+            pep_label[pep]=int(array2[i][1])
 
     uniqpep=sorted(pep_label.iteritems(), key=operator.itemgetter(1))
     for i in range(0,len(uniqpep)):
@@ -344,17 +344,17 @@ for k in range(0,len(var)):
     y=160+60*k
     for i in range(0,len(array2)):
         color=(255,0,0) #red color
-        MTV=array2[i][11].split(',')
-        if array2[i][11]=='':
+        MTV=array2[i][12].split(',')
+        if array2[i][12]=='':
             continue;
-        tuple1=(int(array2[i][12]),int(array2[i][13]))
+        tuple1=(int(array2[i][13]),int(array2[i][14]))
         tuple2=(min(min(varcor[k])),max(max(varcor[k])))
-        exon1=int(array2[i][14])
-        exon2=int(array2[i][15])
+        exon1=int(array2[i][15])
+        exon2=int(array2[i][16])
         if var[k] in MTV and overlap(tuple1,tuple2): #double check
             #print array2[i][4],var[k],MTV
-            stx1=abs(int(array2[i][12])-startcor[exon1-1])+exonstart[exon1-1]
-            stx2=abs(int(array2[i][13])-startcor[exon2-1])+exonstart[exon2-1]
+            stx1=abs(int(array2[i][13])-startcor[exon1-1])+exonstart[exon1-1]
+            stx2=abs(int(array2[i][14])-startcor[exon2-1])+exonstart[exon2-1]
             draw2.rectangle([start+stx1,y,start+stx2,y+height],fill=color)
 
 newimage=Image.blend(im,im2,0.3)
