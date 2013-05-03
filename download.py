@@ -67,7 +67,7 @@ else:
 #####################fetch splice variants from EVDB for all genes########
 infilename=prefix+'_pepdata.txt'
 pepdatafile=open(infilename,'r')
-genedic=getuniqacc(pepdatafile,0)
+genedic=getuniqacc(pepdatafile,1)
 print 'there are',len(genedic),'genes in total'
 
 pepdatafile.close()
