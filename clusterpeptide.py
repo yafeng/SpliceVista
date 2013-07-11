@@ -40,7 +40,7 @@ if __name__=='__main__':
     ################  Comand-line arguments ################
     if len(sys.argv[1:])<=1:  ### Indicates that there are insufficient number of command-line arguments
         print "Warning! wrong command, please read the mannual in Readme.txt."
-        print "Example: python clusterpeptide.py --i heavy_pepdata.txt --o heavy_pqpqout.txt"
+        print "Example: python clusterpeptide.py --i heavy_pepdata.txt --o heavy_pepcluster.txt"
     else:
         options, remainder = getopt.getopt(sys.argv[1:],'', ['metric=',
                                                              'method=',
