@@ -21,9 +21,10 @@ def main():
         a=numpy.array(pepratio,dtype=float)
         mean=numpy.mean(a,axis=0)
         stdv=numpy.std(a,axis=0)
-
+            
         mean_round=[ '%.3f' % elem for elem in mean ]
         stdv_round=[ '%.3f' % elem for elem in stdv ]
+    
         ensp=pep_ensp[pep]
         newline="%s\t%s\t%s\t%i\t%s\t%s\t%s\n" % (pep,gene,ensp,len(a),','.join(mean_round),
                                       ','.join(stdv_round),'0')
@@ -33,7 +34,8 @@ if __name__=='__main__':
     prefix=sys.argv[1]
     infilename=prefix+'_psmdata.txt'
     handle=open(infilename,'r')
-    handle.readline()
+    header=handle.readline().split('\t')
+    samplesize=len(header[3:])
     newheader=['pep','gene symbol','protein accession','PSM count','ratio','standard_dev','cluster']
     firstline='\t'.join(newheader)+'\n'
     
@@ -52,6 +54,8 @@ if __name__=='__main__':
         if gene=="None":#this will discard PSMs with unknown identity
             continue;
         elif ";" in gene: # this will discard PSMs with multiple gene identities
+            continue;
+        elif len(row[3:])!=samplesize:
             continue;
         else:
             if gene not in gene_psmarray:

@@ -1,173 +1,66 @@
 import sys
 import os
 import getopt
+import operator
 from Bio import SeqIO
 from collections import OrderedDict
-import operator
+from mapping_EVDB import ISOFORM,EXON,PEPTIDE
 
 ########################Splicing Variants Structure#########
-def Transcript(start,end,list1,list2):#from a list of eoxn chr start coordiantes and end coordinates generates two list of tuples for each exon [(chr_start,chr_end)],[(Tran_start,Tran_end)]
+def Transcript(start,end,list1,list2):#from a list of exon chr start coordiantes and end coordinates generates two list of tuples for each exon [(chr_start,chr_end)],[(Tran_start,Tran_end)]
     exon_chr=[]
     exon_tx=[]
     tx=1
     for i in range(len(list1)):
-        if int(list2[i])>start and int(list1[i])<start:
-            exon_chr.append((start,int(list2[i])))
-            exonlen=int(list2[i])-start
+        if int(exon.end)>start and int(exon.start)<start:
+            exon_chr.append((start,int(exon.end)))
+            exonlen=int(exon.end)-start
             exon_tx.append((tx,exonlen+tx-1))
             tx+=exonlen
-        elif int(list1[i])>start and int(list2[i])<end:
-            exon_chr.append((int(list1[i]),int(list2[i])))
-            exonlen=int(list2[i])-int(list1[i])
+        elif int(exon.start)>start and int(exon.end)<end:
+            exon_chr.append((int(exon.start),int(exon.end)))
+            exonlen=int(exon.end)-int(exon.start)
             exon_tx.append((tx,tx+exonlen-1))
             tx+=exonlen
-        elif int(list2[i])>end and int(list1[i])<end:
-            exon_chr.append((int(list1[i]),end))
-            exonlen=end-int(list1[i])
+        elif int(exon.end)>end and int(exon.start)<end:
+            exon_chr.append((int(exon.start),end))
+            exonlen=end-int(exon.start)
             exon_tx.append((tx,exonlen+tx-1))
     return exon_chr,exon_tx
 
-###################Maping variants from PQPQ######################
-
-def pepmap(x,lis): #this function search tuple x in a tuple list then return its position.
-    index=0 
-    for i in range(0,len(lis)):
-        if x>=min(lis[i]) and x<=max(lis[i]):
-            index=i
-            break;
-    
-    return index
-
-def sort_table(table, col=0):
-    return sorted(table, key=operator.itemgetter(col))
 ###################Function part end###############################
-def main():
-    pep_cluster=[]
-    NOMV=[]
-    MTV=[]
-    Exon_st=[]
-    Exon_ed=[]
-    Chr_start=[]
-    Chr_end=[]
-    pep_chr=[]
-
-    var=gene_var[gene]
-
-    for j in range(0,len(peparray)):
-        pep_cluster.append(int(peparray[j][-1]))
-        seq=peparray[j][0]
-        protein_acc=peparray[j][2]
-        chr=var_dic[protein_acc][1]
-        strand=var_dic[protein_acc][2]
-        num=0 #count how many known variants the peptide mapped to
-        MTV.append([])
-        CDS=""
-        klist=[]
-        for i in range(0,len(var)):
-            m=protein_dict[var[i]].find(seq)
-            if m!=-1:
-                num=num+1
-                MTV[j].append(var[i])
-                k=i 
+def main(): #the main function for mapping peptides
+    peptide=peparray[i]
+    variantID=peptide.variants[0]
+    gene=variantID.split(".")[0]
+    variant=variant_dic[variantID]#variant here is an object, an instance of ISOFROM()
+    n=variant.seq.find(peptide.seq)
+    peptide.trans_start=1+n*3
+    peptide.trans_end=peptide.trans_start+3*len(peptide.seq)-1
+    peptide.chr=variant.chr
+    peptide.strand=variant.strand
+    
+    exons=variant_dic[variantID].exon
+    print variantID,len(exons)
+    for exon in exons:
+        print exon.number,exon.start,exon.end,exon.trans_start,exon.trans_end
+        if peptide.trans_start<=exon.trans_end and peptide.trans_start>=exon.trans_start:
+            peptide.exon1=exon.number
+            if peptide.strand=='+':
+                peptide.start=exon.start+(peptide.trans_start-exon.trans_start)+1
+            else:
+                peptide.start=exon.start-(peptide.trans_start-exon.trans_start)
         
-        NOMV.append(num)
-        if num!=0:# if the peptide map to one of splice variants
-            peptide_index=protein_dict[protein_acc].index(seq)
-            var_len=3*len(protein_dict[protein_acc])
-            pep_st=1+peptide_index*3 #start position of peptide at the transcript
-            pep_ed=pep_st+3*len(seq)-1
-
-            coding_start=int(var_dic[protein_acc][5])
-            coding_end=int(var_dic[protein_acc][6])
-            exon_starts=var_dic[protein_acc][8][:-1].split(",")
-            exon_ends=var_dic[protein_acc][9][:-1].split(",")
-            exon_chr,exon_tx=Transcript(coding_start,coding_end,exon_starts,exon_ends)
-            if seq=="GLSDFLGVISDTFAPSPDKTIDCDVITLMGTPSGTAEPYDGTK":
-                print protein_dict[protein_acc],pep_st,pep_ed,coding_start,coding_end,exon_chr,exon_tx
-            
-            if strand=='+':
-                index1=pepmap(pep_st,exon_tx)
-                index2=pepmap(pep_ed,exon_tx)
-                Exon_st.append(index1+1)
-                Exon_ed.append(index2+1)
-                chr_st=min(exon_chr[index1])+pep_st-exon_tx[index1][0]+1
-                Chr_start.append(chr_st)
-                chr_ed=min(exon_chr[index2])+pep_ed-exon_tx[index2][0]+1
-                Chr_end.append(chr_ed)
-            elif strand=='-':
-                index1=pepmap(var_len-pep_st+1,exon_tx)
-                index2=pepmap(var_len-pep_ed+1,exon_tx)
-                Exon_st.append(len(exon_tx)-index1)
-                Exon_ed.append(len(exon_tx)-index2)
-                chr_st=max(exon_chr[index2])-(exon_tx[index2][1]-(var_len-pep_ed+1))
-                Chr_start.append(chr_st)
-                chr_ed=max(exon_chr[index1])-(exon_tx[index1][1]-(var_len-pep_st+1))
-                Chr_end.append(chr_ed)
-
-        else:#if peptide doesn't map to any of splicing variants
-            Exon_st.append('')
-            Exon_ed.append('')
-            Chr_start.append('')
-            Chr_end.append('')
-            chr_st=0
-        
-        pep_chr.append([seq,chr_st])         
+        if peptide.trans_end<=exon.trans_end and peptide.trans_end>=exon.trans_start:
+            peptide.exon2=exon.number
+            if peptide.strand=='+':
+                peptide.end=exon.start+peptide.trans_end-exon.trans_start+1
+            else:
+                peptide.end=exon.start-(peptide.trans_end-exon.trans_start)
     
-    pep_chr_sorted=sort_table(pep_chr,1) #sort the peptides according to genomic coordinates
+    line="%s\t%d\t%s\t%s\t%s\t%s\t%s\t%s\t%d\t%d\t%s\t%d\t%d\t%s\t%d\t%d\t%s\t%s\n" % (peptide.seq,peptide.length,peptide.HGNC,peptide.proteinID,peptide.PSMcount,peptide.ratio,peptide.error,peptide.cluster,len(gene_variant[gene]),len(peptide.variants),peptide.chr,peptide.start,peptide.end,peptide.strand,peptide.trans_start,peptide.trans_end,peptide.exon1,peptide.exon2)
     
-    uniqpep={}
-    n=0
-    for i in range(0,len(pep_chr_sorted)):
-        pep=pep_chr_sorted[i][0]
-        if pep not in uniqpep:
-            n+=1
-            uniqpep[pep]=n
-    
-    uniq_cluster=list(set(pep_cluster))
-    if 0 in uniq_cluster:
-        uniq_cluster.remove(0) # 0 means unclustered peptides
-    
-    
-    var_identified={} #store the ID of identified splice variants for this gene
-    gene_psmcount=0
-    
-    for i in range(0,len(peparray)):
-        pep=peparray[i][0]
-        gene_psmcount+=int(peparray[i][3])
-        pepratio=peparray[i][4]
-        s1=str(len(pep))
-        s2=str(len(uniq_cluster))
-        s3=str(len(var))
-        s4=str(NOMV[i])
-        s5=','.join(MTV[i])
-        s6=str(Chr_start[i])
-        s7=str(Chr_end[i])
-        s8=str(Exon_st[i])
-        s9=str(Exon_ed[i])
-        if len(var)>1 and NOMV[i]==1:
-            if s5 not in var_identified:
-                var_identified[s5]=1
-        
-        peplabel=str(uniqpep[pep])
-        line="%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" % (pep,peplabel,s1,"\t".join(peparray[i][1:]),s2,s3,s4,s5,chr,s6,s7,strand,s8,s9)
-        
-        output_handle.write(line)
-    
-    n1=len(uniq_cluster)
-    n2=len(var)    
-    n3=gene_psmcount
-    n4=len(uniqpep)
-    n5=len(var_identified)
-    s10=','.join(var_identified.keys())
-    exonlis=Exon_st+Exon_ed
-    uniqexon=list(set(exonlis))
-    exoncoverage=float(len(uniqexon))/len(exon_tx)
-    newline="%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n"%(gene,str(n1),str(n2),
-                                                str(n3),str(n4),
-                                                str(exoncoverage),
-                                                str(n5),s10)
-    
-    output2_handle.write(newline)
+    output_handle.write(line)
 
 
 ##################map peptide sequence#############################
@@ -175,7 +68,6 @@ if __name__=='__main__':
     ################  Comand-line arguments ################
     if len(sys.argv[1:])<=1:  ### Indicates that there are insufficient number of command-line arguments
         print "Warning! wrong command, please read the mannual in Readme.txt."
-        print "Example: python converter.py --i heavy_msout.txt --prefix heavy --database uniprot"
     else:
         options, remainder = getopt.getopt(sys.argv[1:],'', ['ECgene=',
                                                              'ECprotein=',
@@ -187,71 +79,113 @@ if __name__=='__main__':
             elif opt == '--prefix':prefix=arg
             else:
                 print "Warning! Command-line argument: %s not recognized. Exiting..." % opt; sys.exit()
-
-
+    
     input_file=open(infilename,'r')
     input_file.readline()
-    gene_peparray={} # store peptide info in _pepdata.txt
+    peparray=[] # store peptide info in _pepdata.txt
+    variant_dic={}
+    gene_variant={}
+    print "read peptide data file"
     for line in input_file:
-        row=line[:-1].split("\t")
-        gene=row[2].split(".")[0] #use ECgene cluster as gene id
-        if gene not in gene_peparray:
-            gene_peparray[gene]=[row]
-        else:
-            gene_peparray[gene].append(row)
+        row=line.strip().split("\t")
+        peptide=PEPTIDE(seq=row[0],HGNC=row[1],proteinID=row[2],PSMcount=int(row[3]),ratio=row[4],error=row[5],cluster=row[6])
+        peptide.variants=row[2].split(";")
+        ECvariant=peptide.variants[0]
+        ECgene=ECvariant.split(".")[0]
+        variant=ISOFORM(id=ECvariant)
+        peptide.length=len(peptide.seq)
+        peparray.append(peptide)
+        variant_dic[ECvariant]=variant
+        gene_variant[ECgene]=[]
     
-    print 'there are',len(gene_peparray),'genes in total'
+    print peparray[0].proteinID
+    print variant_dic.keys()
+    print 'there are',len(peparray),'peptides in total'
     input_file.close()
-    print 'mapping.....'
+    print 'reading EC protein sequence file.....'
     
-    protein_dict={}
     protein_db=open(protein_seq_file,'r')
     for line in protein_db:
         row=line.strip().split('\t')
-        protein_dict[row[0]]=row[1]
+        if row[0] in variant_dic:
+            variant_dic[row[0]].seq=row[1]
     
     protein_db.close()
     
     gene_db=open(gene_structure_file,'r')
-    var_dic={} #store splice variant chromosome position
-    gene_var={} #store var ids for each gene 
+    
+    print 'reading EC gene structure file.....'
     for line in gene_db:
-        row=line[:-1].split("\t")
-        var=row[0]
-        gene=var.split(".")[0]
-        var_dic[var]=row
-        if gene not in gene_var:
-            gene_var[gene]=[var]
-        else:
-            gene_var[gene].append(var)
-        
+        row=line.strip().split("\t")
+        variantID=row[0]
+        geneID=row[0].split(".")[0]
+        if geneID in gene_variant:
+            gene_variant[geneID].append(row[0])
+        if variantID in variant_dic:
+            chr_start_list=row[8][:-1].split(",")
+            chr_end_list=row[9][:-1].split(",")
+            variant_dic[variantID].chr=row[1]
+            variant_dic[variantID].strand=row[2]
+            variant_dic[variantID].cdsStart=int(row[5])
+            variant_dic[variantID].cdsEnd=int(row[6])
+            
+            
+            variant_dic[variantID].exon=[]
+            tx=1
+            for i in range(len(chr_start_list)):
+                exon=EXON(variant=row[0],chr=row[1],strand=row[2])
+                exon.number=i+1
+                if int(chr_start_list[i])>variant_dic[variantID].cdsStart and int(chr_end_list[i])<variant_dic[variantID].cdsEnd:
+                    exon.start=int(chr_start_list[i])
+                    exon.end=int(chr_end_list[i])
+                    exonlen=exon.end-exon.start
+                    exon.trans_start=tx
+                    exon.trans_end=tx+exonlen-1
+                    tx+=exonlen
+                elif int(chr_end_list[i])>variant_dic[variantID].cdsStart and int(chr_start_list[i])<variant_dic[variantID].cdsStart:
+                    exon.start=variant_dic[variantID].cdsStart
+                    exon.end=int(chr_end_list[i])
+                    exonlen=exon.end-exon.start
+                    exon.trans_start=tx
+                    exon.trans_end=tx+exonlen-1
+                    tx+=exonlen
+                elif int(chr_end_list[i])>variant_dic[variantID].cdsEnd and int(chr_start_list[i])<variant_dic[variantID].cdsEnd:
+                    exon.start=int(chr_start_list[i])
+                    exon.end=variant_dic[variantID].cdsEnd
+                    exonlen=exon.end-exon.start
+                    exon.trans_start=tx
+                    exon.trans_end=tx+exonlen-1
+                    tx+=exonlen
+                
+                if row[2]=="+":
+                    variant_dic[variantID].exon.append(exon)
+                else:
+                    st=exon.trans_start
+                    ed=exon.trans_end
+                    chr_st=exon.start
+                    chr_ed=exon.end
+                    exon.trans_end=3*len(variant_dic[variantID].seq)-st+1
+                    exon.trans_start=3*len(variant_dic[variantID].seq)-ed+1
+                    exon.start=chr_ed
+                    exon.end=chr_st
+                    variant_dic[variantID].exon.append(exon)
     
-    output1=prefix+'_mappingout.txt'
-    output2=prefix+'_genestatistics.txt'
     
+    
+    
+    gene_db.close()
+    print 'start mapping...'
+    output1=prefix+'_mappingout.txt'    
     output_handle=open(output1,'w')
-    headline1=['peptide sequence','peptide numbering',
-               'peptide length','gene symbol','protein accession','PSM count','peptide ratio',
-               'standard_dev','cluster',
-               'detected clusters NO.','variants NO.','NOMV',
-               'splice variants peptide is mapped to','chromosome','chr_start','chr_end','strand',
-               'exon_start','exon_end']
+    headline1=['peptide sequence','peptide length','gene symbol','protein accession','PSM count','ratio',
+               'standard_dev','PQPQ cluster','ECvariants NO.','NOMV','chr','chr_start','chr_end','strand',
+               'trans_start','trans_end','exon1','exon2']
     output_handle.write('%s\n'%('\t'.join(headline1)))
-    output2_handle=open(output2,'w')
-    headline2=['gene symbol','detected clusters NO.','variants NO.',
-               'PSM count','unique peptides','exon coverage','identified variants','variants ID']
-    output2_handle.write('%s\n'%('\t'.join(headline2)))
-    
-    icount=0
-    for gene in gene_peparray.keys():
-        icount+=1
-        if gene in gene_var:#if the gene's splice info downloaded
-            peparray=gene_peparray[gene]
-            main()
-        if icount%1000==0:
-            print icount,"genes processed"
     
     
+    for i in range(len(peparray)):
+        main()
+    
+    print i,"peptides processed"
     print 'program finished'
     print output1,'saved'
-    print output2,'saved'

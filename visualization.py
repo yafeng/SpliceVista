@@ -1,116 +1,14 @@
-#! /usr/bin/env python
 import sys
-import Image, ImageDraw, ImageFont
+from Bio import SeqIO
 from collections import OrderedDict
 import operator
+import Image, ImageDraw, ImageFont
+from mapping_EVDB import EXON,ISOFORM,PEPTIDE
 import numpy
-
-def extract(gene,infile):#extract splicevariant, subexon info for one gene
-    array=[]
-    for line in infile:
-        if line.split('\t')[0]==gene:
-            array.append(line[:-2].split('\t'));
-
-    return array
-
-def extractmap(gene,infile):#extract mappingout info for one gene
-    array=[]
-    for line in infile:
-        if line.split('\t')[3]==gene:
-            array.append(line[:-1].split('\t'));
-
-    return array  
-#######################Subexons structure############
-def Exoncordinate(lis): #returns a list of cordinates of all exons
-    cor=[]
-    for i in range(0,len(lis)):
-            cor.append((int(lis[i][6]),int(lis[i][7])))
-
-    return cor;
-
-
-def Exonorder(lis):# returns a list of exonorder of all exons
-    order=[]
-    for i in range(0,len(lis)):
-        order.append(int(lis[i][4]))
-
-    return order
-
-def Exonstart(lis): #returns a list of genomic cordinates of starting site of each exon
-    cor=[]
-    cor.append(int(lis[0][6]))
-    for i in range(1,len(lis)):
-        if lis[i-1][4]!=lis[i][4]:
-            cor.append(int(lis[i][6]));
-
-    return cor;
-
-def Exonsend(lis): #returns a list of genomic cordinates of starting site of each exon
-    cor=[]
-    cor.append(int(lis[0][7]))
-    for i in range(1,len(lis)):
-        if lis[i-1][4]!=lis[i][4]:
-            cor.append(int(lis[i][7]));
-
-    return cor;
-
-def sumlen(index,lis): #sum all elements before the element lis[index]
-    sumlen=0
-    for i in range(0,index):
-        sumlen+=max(lis[i])-min(lis[i]);
-
-    return sumlen;
-
-########################Splicing Variants Structure#########
-def collectvariant(lis): #returns a list of variants the gene has.
-    varlist=[]
-    for i in range(0,len(lis)):
-        if lis[i][4] not in varlist:
-            varlist.append((lis[i][4]));
-    return varlist;
-
-def var_cor(lis1,lis2):   #returns an array which stores exons chr_cor from one var together 
-    cordinate=[]
-    for i in range(0,len(lis1)):
-        cordinate.append([])
-        for j in range(0,len(lis2)):
-            if lis1[i]==lis2[j][4]:
-                cordinate[i].append((int(lis2[j][6]),int(lis2[j][7])));
-
-    return cordinate;
-
-def Exon_cor(lis1,lis2):   #returns an array which stores exons aa_cor from one var together 
-    cordinate=[]
-    for i in range(0,len(lis1)):
-        cordinate.append([])
-        for j in range(0,len(lis2)):
-            if lis1[i]==lis2[j][4]:
-                cordinate[i].append((int(lis2[j][8]),int(lis2[j][9])));
-
-    return cordinate;
-
-def Exon_no(lis1,lis2):  #returns an list which stores exon position of variants
-    cordinate=[]
-    for i in range(0,len(lis1)):
-        cordinate.append([])
-        for j in range(0,len(lis2)):
-            if lis1[i]==lis2[j][4]:
-                cordinate[i].append(int(lis2[j][5]));
-
-    return cordinate;
-
-def overlap(t1,t2):# check if two tuples overlap
-    if min(t2)<min(t1)<max(t2) or min(t2)<max(t1)<max(t2):
-        return True;
-    else:
-        return False;
-    
-def getcolor(string,lis1,colorlist):
-    i=lis1.index(string)
-    return colorlist[i];
+import matplotlib.pyplot as plt
 
 def drawxy(ymax):#ymax is the maximum peptide ratio
-    draw.text((100,axis_start),'ratio',font=font,fill='black')
+    draw.text((200,axis_start),'ratio',font=font,fill='black')
     draw.rectangle([350,axis_start,360,axis_start+100*ymax],fill='black',outline='black')
     draw.rectangle([360,axis_start+100*ymax,setwidth-200,axis_start+100*ymax-10],fill='black',outline='black')
     for i in range(1,ymax+1):# draw grid on y axis
@@ -118,247 +16,261 @@ def drawxy(ymax):#ymax is the maximum peptide ratio
         draw.text((300,y3),str(i),font=font,fill='black')
         draw.rectangle([350,y3,390,y3+10],fill='black',outline='black')
 
-
-def histogram(pep,cluster):
-    for i in range(0,len(array2)):
-        if array2[i][0]==pep:
-            a=[array2[i][6].split(','),array2[i][7].split(',')]
-            b=numpy.array(a,dtype=float)
-            pattern=numpy.transpose(b)
-    if cluster!=0:
-        color=getcolor(cluster,uniq_cluster,colorlist)
-    else:
-        color='white'
+def histogram(peptide):#take in peptide object
+    a=[peptide.ratio.split(","),peptide.error.split(",")]
+    b=numpy.array(a,dtype=float)
+    pattern=numpy.transpose(b)
+    color=colorlist[int(peptide.cluster)]
     for i in range(0,len(pattern)):
         draw.rectangle([barstart+25*i,y4,barstart+25*(i+1),y4-100*pattern[i][0]],fill=color,outline='black')
         draw.rectangle([barstart+10+25*i,y4-100*(pattern[i][0]+pattern[i][1]),barstart+15+25*i,y4-100*(pattern[i][0]-pattern[i][1])],fill='black',outline='black')
-    
+
 
 ###################Function part end###############################
+sample=sys.argv[1]
 gene=sys.argv[2]
-handle=open('subexon.txt')
-array=extract(gene,handle)
-
-Exon_pos=Exonorder(array)
-Subexons=Exoncordinate(array) #stores genomic cordinates of all exons
-total=sumlen(len(Subexons),Subexons)# It will be used to set the size of picture
-
-startcor=Exonstart(array) #stores genomic cordinates of starting site of each unique exon 
-handle.close()
-
-handle1=open('splicingvar.txt')
-array1=extract(gene,handle1)   #handle1 should be splicing variants file
-
-var=collectvariant(array1) #get the unique accession of all splicing variants                                 
-Exon_pos1=Exon_no(var,array1) #
-varcor=var_cor(var,array1)
+inputfilename=sample+'_mappingout.txt'
+handle1=open(inputfilename)
+peparray=[]
+#read peptide coordinates from mappingout.txt
+samplesize=0
+for line in handle1:
+    row=line[:-1].split("\t")
+    if row[3]==gene:
+        peptide=PEPTIDE(seq=row[0],number=row[1],length=row[2],HGNC=row[3],proteinID=row[4],PSMcount=int(row[5]),ratio=row[6],error=row[7],cluster=row[8],variants=row[11].split(","),chr=row[12],start=int(row[13]),
+                        end=int(row[14]),strand=row[15],trans_start=int(row[16]),trans_end=int(row[17]),exon1=row[18],exon2=row[19])
+        peparray.append(peptide)
+        samplesize=len(peptide.ratio.split(","))
 
 handle1.close()
 
-sample=sys.argv[1]
-inputfilename=sample+'_mappingout.txt'
-handle2=open(inputfilename) #open  mappingoutput
-array2=extractmap(gene,handle2)   #read mappingoutput
+
+ratio=[]
+cluster=[]
+for peptide in peparray:
+    ratio.append(max(peptide.ratio.split(',')))
+    cluster.append(peptide.cluster)
+
+uniq_cluster=list(set(cluster))
+print max(ratio),len(uniq_cluster)
+ymax=int(float(max(ratio)))+1
+yaxis=100+len(uniq_cluster)*120*ymax
+
+#read splice variant coordinates from file
+handle2=open('splicingvar.txt')
+variant_exon={}
+for line in handle2:
+    row=line[:-1].split("\t")
+    if row[1]==gene:
+        exon=EXON(gene=row[1],chr=row[2],strand=row[3],variant=row[4],number=int(row[5]),
+                  start=int(row[6]),end=int(row[7]),trans_start=int(row[8]),trans_end=int(row[9]))
+        
+        variantID=row[4]
+        if variantID not in variant_exon:
+            variant_exon[variantID]=[exon]
+        else:
+            variant_exon[variantID].append(exon)
+
 handle2.close()
 
+#read gene subexons coordinates from file
+handle3=open('subexon.txt')
+gene_subexon=[]
+exon_chr={}
+for line in handle3:
+    row=line[:-1].split("\t")
+    if row[1]==gene:
+        subexon=EXON(gene=row[1],chr=row[2],strand=row[3],number=int(row[4]),start=int(row[6]),end=int(row[7]))
+        gene_subexon.append(subexon)
+        if subexon.number not in exon_chr:
+            exon_chr[subexon.number]=[subexon.start,subexon.end]
+        else:
+            exon_chr[subexon.number][1]=subexon.end
 
-var_cluster=[]
-quanti=[]
-pep_psmcount={}
-for i in range(0,len(array2)):
-    var_cluster.append(int(array2[i][8])); #get a list of clusterred result 
-    quanti.append(max(array2[i][6].split(',')))
-    pep_psmcount[array2[i][0]]=array2[i][5]
+handle3.close()
 
 
-start=400
-height=50
-
-uniq_cluster=list(set(var_cluster)) #get the unique cluster, used for color setting
-ymax=int(float(max(quanti)))+1
-print len(uniq_cluster),uniq_cluster,ymax
-yaxis=100+len(uniq_cluster)*120*ymax
-setwidth1=start+total+20*len(Subexons)
-setheight=200+60*len(var)+60*len(uniq_cluster)+yaxis
+#set size for the image
+max_transcript=0 #maximum transcript length
+for exon in exon_chr:
+    max_transcript+=abs(exon_chr[exon][0]-exon_chr[exon][1])
 
 uniqcount=[] #count the unique peptides for each cluster
 for i in range(0,len(uniq_cluster)):
-    clus=uniq_cluster[i]
-    psm=[]
-    for i in range(0,len(array2)):
-        if int(array2[i][8])==clus:
-            psm.append(array2[i][0])
+    count=cluster.count(uniq_cluster[i])
+    uniqcount.append(count)
 
-    countuniqpep=len(psm)
-    #print countuniqpep
-    uniqcount.append(countuniqpep)
+start=400 #start position for first subexon
+height=50
+background='#eee' #grey color
+setwidth1=start+max_transcript+20*len(exon_chr)
+setwidth2=400+230*max(uniqcount)
 
-print uniqcount
-maxuniq=max(uniqcount)
-setwidth2=400+230*maxuniq
-print setwidth1,setwidth2
 setwidth=max(setwidth1,setwidth2)
-
-im=Image.new('RGB',(setwidth,setheight),'#eee')    
+setheight=200+60*len(variant_exon)+60*len(uniq_cluster)+yaxis
+im=Image.new('RGB',(setwidth,setheight),background)    
 draw=ImageDraw.Draw(im)
-
 font=ImageFont.truetype("Noxchi_Arial.ttf",30)
 font2=ImageFont.truetype("Noxchi_Arial.ttf",20)
-
-
-exoncor=[] #this list will store starting cordinates of exons 
-exoncor1=[] #this list will store ending cordinates of exons
-exonstart=[] #this list will store starting cordinates of unique exons
-exonend=[]   #this list will store starting cordinates of unique exons
 
 
 ################draw image of subexons###########
 draw.text((10,50),gene,font=font,fill='black')
 draw.text((10,100),'Subexons: ',font=font,fill='black')
 
-for i in range(0,len(Subexons)):
-    stx=(Exon_pos[i]-1)*20+sumlen(i,Subexons)
-    exoncor.append(stx)
-    y=100
-    width=max(Subexons[i])-min(Subexons[i])
-    exoncor1.append(stx+width)
-    y1=y+height/2-5
+width=0
+stx=0
+stx2=0
+
+exon_plt_start={} #subexon start position in the plot
+exon_plt_end={} #subexon end position in the plot
+intron_color=(125,125,125)
+for i in range(0,len(gene_subexon)):
+    subexon=gene_subexon[i]
+    stx1=(subexon.number-1)*20
+    stx=stx1+stx2
+    y=100 #y axis of the subexon
+    width=abs(subexon.start-subexon.end) #width of subexon
+    y1=y+height/2-5 #y axix of the intron line
+    
+    exon_plt_end[subexon.number]=start+stx+width
+    if subexon.number not in exon_plt_start:
+        exon_plt_start[subexon.number]=start+stx
+    
     draw.rectangle([start+stx,y,start+stx+width,y+height],fill='white',outline='black');
-    if i!=len(Subexons)-1:
-        draw.rectangle([start+stx+width,y1,start+stx+width+20,y1+10],fill='blue',outline='blue');
+    stx2+=width
+    if i!=len(gene_subexon)-1:
+        draw.rectangle([start+stx+width,y1,start+stx+width+20,y1+10],fill=intron_color,outline=intron_color);
 
 
-for i in range(1,max(Exon_pos)+1):
-    index=Exon_pos.index(i)
-    exonstart.append(exoncor[index])
-    exonend.append(exoncor1[index]);
-
-for i in range(0,len(exonstart)):
-    x_cor=exonstart[i]+(exonend[i]-exonstart[i])/2
+#label the subexons
+for exon in exon_plt_start:
+    x_cor=(exon_plt_start[exon]+exon_plt_end[exon])/2
     y_cor=50
-    draw.text((start+x_cor,y_cor),str(i+1),font=font,fill='blue');
-
+    draw.text((x_cor,y_cor),str(exon),font=font,fill='blue');
 ############draw image of known splicing variants#####
-for j in range(0,len(var)):
+j=0
+variant_plt_start={} #splice variant's all exons' start position in the plot
+variant_plt_end={} #splice variant's all exons' end position in the plot
+for variant in variant_exon.keys():
+    variant_plt_start[variant]={}
+    variant_plt_end[variant]={}
+    exonarray=variant_exon[variant]
+    exonarray.sort(key=operator.attrgetter('trans_start'))
+    color=(245,245,220) #splice variant exon color
     y=160+60*j
     y1=y+height/2-5
-    stx=0
-    draw.text((10,y),var[j],font=font,fill='black')
-    minnum=min(Exon_pos1[j])# the num of the first exon of this variant
-    color=(0,255,0) # green color
-    if array[0][3]=='+': #check seq direction is + or -
-        stx1=start+min(min(varcor[j]))-startcor[minnum-1]+exonstart[minnum-1]
-    else:
-        stx1=start+startcor[minnum-1]-max(max(varcor[j]))+exonstart[minnum-1]
-    for i in range(0,len(varcor[j])):
-        cor=varcor[j][i]
-        num=Exon_pos1[j][i]#corresponding exon of the cordinates
-        width=max(varcor[j][i])-min(varcor[j][i])
-        if array[0][3]=='+':
-            stx=min(cor)-startcor[num-1]+exonstart[num-1]
-            draw.rectangle([start+stx,y,start+stx+width,y+height],fill=color,outline='black');
-        else:
-            stx=startcor[num-1]-max(cor)+exonstart[num-1]
-            draw.rectangle([start+stx,y,start+stx+width,y+height],fill=color,outline='black');
-            #print startcor[num-1],max(cor),exonstart[num-1],stx
-    if minnum!=num:        
-        draw.rectangle([stx1,y1,start+stx,y1+10],fill=color,outline=color)
-    else:
-        if array[0][3]=='-':
-            stx=startcor[num-1]-max(min(varcor[j]))+exonstart[num-1]
-            draw.rectangle([stx1,y1,start+stx,y1+10],fill=color,outline=color)
-        else:
-            stx=min(max(varcor[j]))-startcor[num-1]+exonstart[num-1]
-            draw.rectangle([stx1,y1,start+stx,y1+10],fill=color,outline=color)
-    
+    draw.text((10,y),variant,font=font,fill='black')
+    for i in range(0,len(exonarray)):
+        exon=exonarray[i]
+        if exon.trans_start>0:
+            stx=abs(exon.start-exon_chr[exon.number][0])+exon_plt_start[exon.number]
+            width=abs(exon.start-exon.end)
+            draw.rectangle([stx,y,stx+width,y+height],fill=color,outline='black');
+            
+            variant_plt_end[variant][exon.number]=stx+width
+            if exon.number not in variant_plt_start[variant]:
+                variant_plt_start[variant][exon.number]=stx
+            
+            if i!=len(exonarray)-1:
+                exon2=exonarray[i+1]
+                stx2=abs(exon2.start-exon_chr[exon2.number][0])+exon_plt_start[exon2.number]
+                width2=abs(exon2.start-exon2.end)
+                draw.rectangle([stx+width,y1,stx2,y1+10],fill=intron_color,outline=intron_color);
+    j+=1
+
+
 ######draw peptides in different clusters##############
-colorlist=['blue','lime','red','magenta','yellow','cyan',
-           'purple','navy','orange','maroon','brown','teal','violet']
+colorlist=[(255,250,250),(0,0,205),(65,105,225),(135,206,250),(224,255,255),(0,100,0),
+           (34,139,34),(46,139,87),(144,238,144),(32,178,170),(50,205,50)]
 
-bottom=y+60
+panel2=y+60
 
+uniq_cluster.sort()
 for i in range(0,len(uniq_cluster)):
-    y1=bottom+60*i
-    count=var_cluster.count(uniq_cluster[i])#count how many psm in each cluster
-
-    draw.text((150,y1),'%s(%s)'%('cluster'+str(uniq_cluster[i]),str(count)),font=font,fill='black')
-    if uniq_cluster[i]!=0:
-        draw.rectangle([150,y1,0,y1+50],fill=colorlist[i],outline=colorlist[i])
-        
-    else:
-        draw.rectangle([150,y1,0,y1+50],fill='white',outline='white')
+    y1=panel2+60*int(uniq_cluster[i])
+    clus=int(uniq_cluster[i])
+    count=cluster.count(uniq_cluster[i]) #count how many peptide in each cluster
+    draw.text((150,y1+10),'%s(%s)'%('cluster'+uniq_cluster[i],str(count)),font=font,fill='black')
+    draw.rectangle([10,y1,150,y1+50],fill=colorlist[clus],outline="black")
 
 
-for i in range(0,len(array2)):  #draw peptides for each cluster
-    if array2[i][12]=='':
+for peptide in peparray:  #draw peptides for each cluster
+    if peptide.start==None:
         continue;
-    if int(array2[i][8])!=0:
-        color=getcolor(int(array2[i][8]),uniq_cluster,colorlist)
-    else:
-        color='white'
         
-    exon1=int(array2[i][15])
-    exon2=int(array2[i][16])
-    stx1=abs(int(array2[i][13])-startcor[exon1-1])+exonstart[exon1-1]
-    stx2=abs(int(array2[i][14])-startcor[exon2-1])+exonstart[exon2-1]
-    k1=uniq_cluster.index(int(array2[i][8]))
-    y2=bottom+60*k1
-    draw.rectangle([start+stx1,y2,start+stx2,y2+10],fill=color,outline=color)
-    pepNO=array2[i][1]
-    draw.text((start+stx1,y2+10),pepNO,font=font2,fill='black')
-    if int(array2[i][11])==1 and int(array2[i][10])>1:
-        k2=var.index(array2[i][12])
-        Y=160+k2*60
-        draw.text((10,Y),var[k2]+'(*)',font=font,fill='black')
+    color=colorlist[int(peptide.cluster)]
+    exon1=int(peptide.exon1)
+    exon2=int(peptide.exon2)
+    stx1=abs(peptide.start-exon_chr[exon1][0])+exon_plt_start[exon1]
+    stx2=abs(peptide.end-exon_chr[exon2][0])+exon_plt_start[exon2]
+    y2=panel2+60*int(peptide.cluster)
+    draw.text((stx1,y2+10),peptide.number,font=font2,fill='black')
+    if exon1==exon2:
+        draw.rectangle([stx1,y2,stx2,y2+10],fill=color,outline=color)
+    else:
+        if peptide.variants[0]=="": #for novel splice junction peptides which can't map to any of known variants
+            draw.rectangle([stx1,y2,stx1+peptide.trans_start,y2+10],fill=color,outline="black")
+            draw.rectangle([stx1+peptide.trans_start,y2+4,stx2-peptide.trans_end,y2+6],fill=intron_color,outline=intron_color)
+            draw.rectangle([stx2-peptide.trans_end,y2,stx2,y2+10],fill=color,outline="black")
+            print peptide.seq,peptide.number,stx1,stx1+peptide.trans_start,stx2-peptide.trans_end,stx2
+        else:
+            variant_exon2_start=variant_plt_start[peptide.variants[0]][exon2]
+            variant_exon1_end=variant_plt_end[peptide.variants[0]][exon1]
+            draw.rectangle([stx1,y2,variant_exon1_end,y2+10],fill=color,outline="black")
+            draw.rectangle([variant_exon1_end,y2+4,variant_exon2_start,y2+6],fill=intron_color,outline=intron_color)
+            draw.rectangle([variant_exon2_start,y2,stx2,y2+10],fill=color,outline="black")
 
 
 ############draw quantitative pattern of the peptides###############
-    
 for i in range(0,len(uniq_cluster)):
-    cluster=uniq_cluster[i]
     axis_start=y1+100+(100*ymax+20)*i
     y4=axis_start+100*ymax
     drawxy(ymax)
-    draw.text((100,(y4+axis_start)/2),'cluster'+str(cluster),font=font,fill='black')
-    pep_label={}
-    for i in range(0,len(array2)):
-        if int(array2[i][8])==cluster:
-            pep=array2[i][0]
-            pep_label[pep]=int(array2[i][1])
+    draw.text((150,(y4+axis_start)/2),'cluster'+str(uniq_cluster[i]),font=font,fill='black')
+    j=0
+    for peptide in peparray:
+        if peptide.cluster==uniq_cluster[i]:
+            barstart=400+j*(samplesize*25+30)
+            mid=samplesize*25/4
+            histogram(peptide)
+            xlabel='peptide '+peptide.number+'('+str(peptide.PSMcount)+')'
+            draw.text((barstart+mid,y4),xlabel,font=font2,fill='black')
+            j+=1
 
-    uniqpep=sorted(pep_label.iteritems(), key=operator.itemgetter(1))
-    for i in range(0,len(uniqpep)):
-        pep=uniqpep[i][0]
-        barstart=400+i*230
-        histogram(pep,cluster)
-        pepNO=pep_label[pep]
-        psmcount=pep_psmcount[pep]
-        xlabel='peptide '+str(pepNO)+'('+psmcount+')'
-        draw.text((barstart+50,y4),xlabel,font=font2,fill='black')
 
 ###draw mapped peptide on the transcript######
 im2=Image.new('RGB',(setwidth,setheight),'#eee')    
 draw2=ImageDraw.Draw(im2)
 
-for k in range(0,len(var)):
+k=0
+for variant in variant_exon.keys():
     y=160+60*k
-    for i in range(0,len(array2)):
-        color=(255,0,0) #red color
-        MTV=array2[i][12].split(',')
-        if array2[i][12]=='':
+    for peptide in peparray:
+        if peptide.start==None:
             continue;
-        tuple1=(int(array2[i][13]),int(array2[i][14]))
-        tuple2=(min(min(varcor[k])),max(max(varcor[k])))
-        exon1=int(array2[i][15])
-        exon2=int(array2[i][16])
-        if var[k] in MTV and overlap(tuple1,tuple2): #double check
+        
+        color=(132,112,255)
+        MTV=peptide.variants
+        exon1=int(peptide.exon1)
+        exon2=int(peptide.exon2)
+        if variant in MTV:
             #print array2[i][4],var[k],MTV
-            stx1=abs(int(array2[i][13])-startcor[exon1-1])+exonstart[exon1-1]
-            stx2=abs(int(array2[i][14])-startcor[exon2-1])+exonstart[exon2-1]
-            draw2.rectangle([start+stx1,y,start+stx2,y+height],fill=color)
+            stx1=abs(peptide.start-exon_chr[exon1][0])+exon_plt_start[exon1]
+            stx2=abs(peptide.end-exon_chr[exon2][0])+exon_plt_start[exon2]
+            if exon1==exon2:
+                draw2.rectangle([stx1,y,stx2,y+height],fill=color)
+            else:
+                variant_exon2_start=variant_plt_start[variant][exon2]
+                variant_exon1_end=variant_plt_end[variant][exon1]
+                draw2.rectangle([stx1,y,variant_exon1_end,y+height],fill=color,outline=color)
+                draw2.rectangle([variant_exon2_start,y,stx2,y+height],fill=color,outline=color)
+
+    k+=1
+
 
 newimage=Image.blend(im,im2,0.3)
 
-imagename=gene+'_pattern_'+sample+'.png'
-newimage.save(imagename)
+imagename=gene+'_pattern_'+sample+'.tiff'
+newimage.save(imagename,dpi=(300,300))
 print imagename+' saved'
