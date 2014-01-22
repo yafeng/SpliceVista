@@ -30,37 +30,62 @@ def Transcript(start,end,list1,list2):#from a list of exon chr start coordiantes
 
 ###################Function part end###############################
 def main(): #the main function for mapping peptides
-    peptide=peparray[i]
-    variantID=peptide.variants[0]
-    gene=variantID.split(".")[0]
-    variant=variant_dic[variantID]#variant here is an object, an instance of ISOFROM()
-    n=variant.seq.find(peptide.seq)
-    peptide.trans_start=1+n*3
-    peptide.trans_end=peptide.trans_start+3*len(peptide.seq)-1
-    peptide.chr=variant.chr
-    peptide.strand=variant.strand
-    
-    exons=variant_dic[variantID].exon
-    print variantID,len(exons)
-    for exon in exons:
-        print exon.number,exon.start,exon.end,exon.trans_start,exon.trans_end
-        if peptide.trans_start<=exon.trans_end and peptide.trans_start>=exon.trans_start:
-            peptide.exon1=exon.number
-            if peptide.strand=='+':
-                peptide.start=exon.start+(peptide.trans_start-exon.trans_start)+1
-            else:
-                peptide.start=exon.start-(peptide.trans_start-exon.trans_start)
+    for i in range(len(peparray)):
+        peptide=peparray[i]
+        variantID=peptide.variants[0]
+        variant=variant_dic[variantID]#variant here is an object, an instance of ISOFROM()
+        n=variant.seq.find(peptide.seq)
+        peptide.trans_start=1+n*3
+        peptide.trans_end=peptide.trans_start+3*len(peptide.seq)-1
+        peptide.chr=variant.chr
+        peptide.strand=variant.strand
         
-        if peptide.trans_end<=exon.trans_end and peptide.trans_end>=exon.trans_start:
-            peptide.exon2=exon.number
-            if peptide.strand=='+':
-                peptide.end=exon.start+peptide.trans_end-exon.trans_start+1
-            else:
-                peptide.end=exon.start-(peptide.trans_end-exon.trans_start)
+        exons=variant_dic[variantID].exon
+        print variantID,len(exons)
+        for exon in exons:
+            print exon.number,exon.start,exon.end,exon.trans_start,exon.trans_end
+            if peptide.trans_start<=exon.trans_end and peptide.trans_start>=exon.trans_start:
+                peptide.exon1=exon.number
+                if peptide.strand=='+':
+                    peptide.start=exon.start+(peptide.trans_start-exon.trans_start)+1
+                else:
+                    peptide.start=exon.start-(peptide.trans_start-exon.trans_start)
+            
+            if peptide.trans_end<=exon.trans_end and peptide.trans_end>=exon.trans_start:
+                peptide.exon2=exon.number
+                if peptide.strand=='+':
+                    peptide.end=exon.start+peptide.trans_end-exon.trans_start+1
+                else:
+                    peptide.end=exon.start-(peptide.trans_end-exon.trans_start)
+    if peptide.strand=="+":
+        peparray.sort(key=operator.attrgetter('start'))
+    else:
+        peparray.sort(key=operator.attrgetter('start'),reverse=True)
     
-    line="%s\t%d\t%s\t%s\t%s\t%s\t%s\t%s\t%d\t%d\t%s\t%d\t%d\t%s\t%d\t%d\t%s\t%s\n" % (peptide.seq,peptide.length,peptide.HGNC,peptide.proteinID,peptide.PSMcount,peptide.ratio,peptide.error,peptide.cluster,len(gene_variant[gene]),len(peptide.variants),peptide.chr,peptide.start,peptide.end,peptide.strand,peptide.trans_start,peptide.trans_end,peptide.exon1,peptide.exon2)
     
-    output_handle.write(line)
+    genePSMcount=0
+    uniquecluster=[]
+    identified_variants=[]
+    #write output for in mappingout.txt
+    for peptide in peparray:
+        pep_number+=1
+        genePSMcount+=peptide.PSMcount
+        peptide.number=pep_number
+        uniquecluster.append(peptide.cluster)
+        
+        if len(variant_list)>1 and len(peptide.variants)==1:
+            identified_variants+=peptide.variants
+        line="%s\t%d\t%d\t%s\t%s\t%d\t%s\t%s\t%s\t%d\t%d\t%s\t%s\t%d\t%d\t%s\t%d\t%d\t%s\t%s\n" % (peptide.seq,peptide.number,peptide.length,peptide.HGNC,peptide.proteinID,peptide.PSMcount,peptide.ratio,peptide.error,peptide.cluster,len(variant_list),len(peptide.variants),",".join(peptide.variants),peptide.chr,peptide.start,peptide.end,peptide.strand,peptide.trans_start,peptide.trans_end,peptide.exon1,peptide.exon2)
+        
+        output_handle.write(line)
+
+    #write output for in genestatistics.txt
+    cluster=len(set(uniquecluster))
+    uniquevar=list(set(identified_variants))
+    num_var=len(uniquevar)
+    newline="%s\t%d\t%d\t%d\t%d\t%d\t%s\n"%(gene,cluster,len(variant_list),genePSMcount,
+                                            len(peparray),num_var,",".join(uniquevar))
+    output2_handle.write(newline)
 
 
 ##################map peptide sequence#############################
@@ -82,7 +107,7 @@ if __name__=='__main__':
     
     input_file=open(infilename,'r')
     input_file.readline()
-    peparray=[] # store peptide info in _pepdata.txt
+    gene_peparray=[] # store peptide info in _pepdata.txt
     variant_dic={}
     gene_variant={}
     print "read peptide data file"
@@ -94,9 +119,13 @@ if __name__=='__main__':
         ECgene=ECvariant.split(".")[0]
         variant=ISOFORM(id=ECvariant)
         peptide.length=len(peptide.seq)
-        peparray.append(peptide)
         variant_dic[ECvariant]=variant
         gene_variant[ECgene]=[]
+        if ECgene not in gene_variant:
+            gene_peparray[ECgene]=[peptide]
+        else:
+            gene_peparray[ECgene].append(peptide)
+
     
     print peparray[0].proteinID
     print variant_dic.keys()
@@ -135,21 +164,21 @@ if __name__=='__main__':
             for i in range(len(chr_start_list)):
                 exon=EXON(variant=row[0],chr=row[1],strand=row[2])
                 exon.number=i+1
-                if int(chr_start_list[i])>variant_dic[variantID].cdsStart and int(chr_end_list[i])<variant_dic[variantID].cdsEnd:
+                if int(chr_start_list[i])>=variant_dic[variantID].cdsStart and int(chr_end_list[i])<=variant_dic[variantID].cdsEnd:
                     exon.start=int(chr_start_list[i])
                     exon.end=int(chr_end_list[i])
                     exonlen=exon.end-exon.start
                     exon.trans_start=tx
                     exon.trans_end=tx+exonlen-1
                     tx+=exonlen
-                elif int(chr_end_list[i])>variant_dic[variantID].cdsStart and int(chr_start_list[i])<variant_dic[variantID].cdsStart:
+                elif int(chr_end_list[i])>=variant_dic[variantID].cdsStart and int(chr_start_list[i])<=variant_dic[variantID].cdsStart:
                     exon.start=variant_dic[variantID].cdsStart
                     exon.end=int(chr_end_list[i])
                     exonlen=exon.end-exon.start
                     exon.trans_start=tx
                     exon.trans_end=tx+exonlen-1
                     tx+=exonlen
-                elif int(chr_end_list[i])>variant_dic[variantID].cdsEnd and int(chr_start_list[i])<variant_dic[variantID].cdsEnd:
+                elif int(chr_end_list[i])>=variant_dic[variantID].cdsEnd and int(chr_start_list[i])<=variant_dic[variantID].cdsEnd:
                     exon.start=int(chr_start_list[i])
                     exon.end=variant_dic[variantID].cdsEnd
                     exonlen=exon.end-exon.start
@@ -168,6 +197,7 @@ if __name__=='__main__':
                     exon.trans_start=3*len(variant_dic[variantID].seq)-ed+1
                     exon.start=chr_ed
                     exon.end=chr_st
+                    exon.number=len(chr_start_list)-i
                     variant_dic[variantID].exon.append(exon)
     
     
@@ -175,15 +205,23 @@ if __name__=='__main__':
     
     gene_db.close()
     print 'start mapping...'
-    output1=prefix+'_mappingout.txt'    
+    output1=prefix+'_mappingout.txt'
+    
     output_handle=open(output1,'w')
     headline1=['peptide sequence','peptide length','gene symbol','protein accession','PSM count','ratio',
-               'standard_dev','PQPQ cluster','ECvariants NO.','NOMV','chr','chr_start','chr_end','strand',
+               'standard_dev','PQPQ cluster','ECvariants NO.','NOMV','ECvariant ID','chr','chr_start','chr_end','strand',
                'trans_start','trans_end','exon1','exon2']
     output_handle.write('%s\n'%('\t'.join(headline1)))
     
+    output2=prefix+'_genestatistics.txt'
+    output2_handle=open(output2,'w')
+    headline2=['gene symbol','detected clusters NO.','known variants NO.',
+               'PSM count','unique peptides','identified variants','variants ID']
+    output2_handle.write('%s\n'%('\t'.join(headline2)))
     
-    for i in range(len(peparray)):
+    
+    for ECgene in gene_peparray.keys():
+        peparray=gene_peparray[ECgene]
         main()
     
     print i,"peptides processed"
