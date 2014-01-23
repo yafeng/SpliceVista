@@ -28,25 +28,24 @@ def histogram(peptide):#take in peptide object
 
 ###################Function part end###############################
 
-scale=3 #default, scale 3 base into 1 pixel
+scale=5 #default, scale 3 base into 1 pixel
 ################  Comand-line arguments ################
 if len(sys.argv[1:])<=1:  ### Indicates that there are insufficient number of command-line arguments
     print "Warning! wrong command, please read the mannual in Readme.txt."
 else:
     options, remainder = getopt.getopt(sys.argv[1:],'', ['sample=',
                                                          'scale=',
+                                                         'gene-structure-file=',
                                                          'id='])
     for opt, arg in options:
         if opt == '--sample': sample=arg
         elif opt == '--scale': scale=int(arg)
-        elif opt == '--id':varids=arg
+        elif opt == '--gene-structure-file':ECfilename=arg
+        elif opt == '--id':id=arg
         else:
             print "Warning! Command-line argument: %s not recognized. Exiting..." % opt; sys.exit()
 
 
-
-varlist=varids.split(",")
-print varlist
 inputfilename=sample+'_mappingout.txt'
 handle1=open(inputfilename)
 peparray=[]
@@ -55,7 +54,8 @@ samplesize=0
 handle1.readline()
 for line in handle1:
     row=line[:-1].split("\t")
-    if row[4] in varlist:
+    gene=row[4].split('.')[0]
+    if gene==id:
         peptide=PEPTIDE(seq=row[0],number=row[1],length=row[2],HGNC=row[3],proteinID=row[4],PSMcount=int(row[5]),ratio=row[6],error=row[7],cluster=row[8],variants=row[11].split(","),chr=row[12],start=int(row[13]),end=int(row[14]),strand=row[15],trans_start=int(row[16]),trans_end=int(row[17]),exon1=row[18],exon2=row[19])
         peparray.append(peptide)
         samplesize=len(peptide.ratio.split(","))
@@ -75,25 +75,33 @@ yaxis=100+len(uniq_cluster)*120*ymax
 
 variant_objects=[]
 variant_exons={} #variant ID as key, value is a dictionary which stores exon object as value,exon number as key
-exonnumber=[]
-handle2=open("hg19_b1_high_gene.txt",'r')
+handle2=open(ECfilename ,'r')
+strand="+"
 for line in handle2:
     row=line.strip().split("\t")
-    if row[0] in varlist:
+    gene=row[0].split('.')[0]
+    if gene==id:
         transcript_length=0
         variant_exons[row[0]]={}
         variant=ISOFORM(id=row[0],chr=row[1],strand=row[2],chr_start=int(row[3]),chr_end=int(row[4]),cds_start=int(row[5]),cds_end=int(row[6]),exon=int(row[7]))
-        exonnumber.append(int(row[7]))
+        variant.chr_span=int(row[4])-int(row[3])
+        strand=row[2]
         
         startlist=row[8].split(',')
         endlist=row[9].split(',')
         for i in range(len(endlist[:-1])):
-            exon=EXON(variant=row[0],chr=row[1],strand=row[2],start=int(startlist[i]),end=int(endlist[i]))
-            exon.length=abs(exon.end-exon.start)
+            exon=EXON(variant=row[0],chr=row[1],strand=row[2])
+            
             if variant.strand=="+":
                 exon.number=i+1
+                exon.start=int(startlist[i])
+                exon.end=int(endlist[i])
             else:
                 exon.number=len(endlist[:-1])-i
+                exon.start=int(endlist[i])
+                exon.end=int(startlist[i])
+            
+            exon.length=abs(exon.end-exon.start)        
             transcript_length+=exon.length
             variant_exons[row[0]][exon.number]=exon
         
@@ -102,10 +110,10 @@ for line in handle2:
 
 
 ############set image parameters#####
-
-max_transcript=max(var.transcript_length for var in variant_objects)
-print "max_transcript",max_transcript
-setwidth=400+20*max(exonnumber)+max_transcript/scale 
+min_chr=min(var.chr_start for var in variant_objects)
+max_chr=max(var.chr_end for var in variant_objects)
+print "maximum chromosome span,bp",(max_chr-min_chr)
+setwidth=400+(max_chr-min_chr)/scale
 setheight=200+60*len(variant_exons)+60*len(uniq_cluster)+yaxis
 print setwidth,setheight
 background='#eee' #grey color
@@ -119,53 +127,70 @@ exonheight=50
 start=250
 introncolor=(125,125,125)
 exoncolor=(245,245,220)
+stcodon_color='green'
+edcodon_color='red'
+pep_shadow=(132,112,255)
+
 print len(variant_exons)
 print len(variant_objects)
-variant_objects.sort(key=operator.attrgetter('chr_start'))
+if strand=="+":
+    variant_objects.sort(key=operator.attrgetter('chr_start'))
+else:
+    variant_objects.sort(key=operator.attrgetter('chr_end'),reverse=True)
 
 for j in range(len(variant_objects)):
     var=variant_objects[j]
     print var.id
     y=160+60*j
-
-    y1=y+exonheight/2-5
+    y1=y+exonheight/2-2
     draw.text((10,y1),var.id,font=font,fill='black')
-     #splice variant exon color
+    #splice variant exon color
     if j==0:
         indent=0
     else:
-        indent=abs(var.chr_start-variant_objects[0].chr_start)/scale
-        print var.id,stx
+        if strand=="+":
+            indent=abs(var.chr_start-variant_objects[0].chr_start)/scale
+        else:
+            indent=abs(var.chr_end-variant_objects[0].chr_end)/scale
+        print var.id,indent
     
-    stx2=0
+    stx_chr=variant_exons[var.id][1].start
+    print "stx_chr",stx_chr
     for i in range(var.exon):
-        exon=variant_exons[var.id][i+1]
-        stx1=i*20
-        stx=indent+stx1+stx2
-        width=exon.length/scale
-        draw.rectangle([start+stx,y,start+stx+width,y+exonheight],fill=exoncolor,outline='black');
-        stx2+=width
-        exon.plt_st=start+stx
-        exon.plt_ed=start+stx+width
-        exon.plt_ycor=y
-        print start+stx,start+stx+width,i+1,exon.number
-        if exon.start<=var.cds_start<=exon.end:
-            cds_stx=stx+abs(exon.start-var.cds_start)/scale
-            draw.rectangle([start+cds_stx,y,start+cds_stx+2,y+exonheight],fill='black',outline='black');
-        if exon.start<=var.cds_end<=exon.end:
-            cds_stx=stx+abs(exon.start-var.cds_end)/scale
-            draw.rectangle([start+cds_stx,y,start+cds_stx+2,y+exonheight],fill='black',outline='black');
-        if i!=var.exon-1:
-            draw.rectangle([start+stx+width,y1,start+stx+width+20,y1+10],fill=introncolor,outline=introncolor)
+        exon1=variant_exons[var.id][i+1]
+        stx=indent+abs(exon1.start-stx_chr)/scale
+        exon1size=exon1.length/scale
+        draw.rectangle([start+stx,y,start+stx+exon1size,y+exonheight],fill=exoncolor,outline='black');
+        if i+1<var.exon:
+            exon2=variant_exons[var.id][i+2]
+            stx2=indent+abs(exon2.start-stx_chr)/scale
+            draw.rectangle([start+stx+exon1size,y1,start+stx2,y1+4],fill=introncolor,outline=introncolor)
+        
+        exon1.plt_st=start+stx
+        exon1.plt_ed=start+stx+exon1size
+        exon1.plt_ycor=y
+        
+        print exon1.start,start+stx,start+stx+exon1size,i+1,exon1.number,exon1.length,exon1size
+    
+    
+    cds_stx=variant_exons[var.id][1].plt_st+abs(var.cds_start-stx_chr)/scale
+    cds_ed=variant_exons[var.id][1].plt_st+abs(var.cds_end-stx_chr)/scale
+    if strand=="+":
+        draw.rectangle([cds_stx,y,cds_stx+2,y+exonheight],fill=stcodon_color,outline=stcodon_color);
+        draw.rectangle([cds_ed,y,cds_ed+2,y+exonheight],fill=edcodon_color,outline=edcodon_color);
+    else:
+        draw.rectangle([cds_stx,y,cds_stx+2,y+exonheight],fill=edcodon_color,outline=edcodon_color);
+        draw.rectangle([cds_ed,y,cds_ed+2,y+exonheight],fill=stcodon_color,outline=stcodon_color);
+
 
 
 
 
 ######draw peptides in different clusters##############
-colorlist=[(255,250,250),(0,0,205),(65,105,225),(135,206,250),(224,255,255),(0,100,0),
+colorlist=[(0,0,205),(65,105,225),(135,206,250),(224,255,255),(0,100,0),
            (34,139,34),(46,139,87),(144,238,144),(32,178,170),(50,205,50)]
 
-panel2=y+60
+panel2=y+80
 
 uniq_cluster.sort()
 for i in range(0,len(uniq_cluster)):
@@ -180,29 +205,34 @@ for peptide in peparray:  #draw peptides for each cluster
     if peptide.start==None:
         continue;
     
-    #color=colorlist[int(peptide.cluster)]
-    color=colorlist[1]
-    exon1=variant_exons[peptide.proteinID][int(peptide.exon1)] #exon1 and exon2 are EXON object
-    exon2=variant_exons[peptide.proteinID][int(peptide.exon2)]
-
-    if peptide.strand=="+":
+    color=colorlist[int(peptide.cluster)]
+    for ECvar in peptide.proteinID.split(','):
+        exon1=variant_exons[ECvar][int(peptide.exon1)] #exon1 and exon2 are EXON object
+        exon2=variant_exons[ECvar][int(peptide.exon2)]
+        
         stx1=abs(peptide.start-exon1.start)/scale+exon1.plt_st
         stx2=abs(peptide.end-exon2.start)/scale+exon2.plt_st
-    else:
-        stx1=abs(peptide.start-exon1.end)/scale+exon1.plt_st
-        stx2=abs(peptide.end-exon2.end)/scale+exon2.plt_st
-
-    y2=panel2+60*int(peptide.cluster)
-    draw.text((stx1,y2+10),peptide.number,font=font2,fill='black')
-    width=float(peptide.length)/scale
-    if exon1==exon2:
-        draw.rectangle([stx1,y2,stx1+width,y2+10],fill=color,outline=color)
-    else:
-        draw.rectangle([stx1,y2,exon1.plt_ed,y2+10],fill=color,outline="black")
-        draw.rectangle([exon1.plt_ed,y2+4,exon2.plt_st,y2+6],fill=introncolor,outline=introncolor)
-        draw.rectangle([exon2.plt_st,y2,stx2,y2+10],fill=color,outline="black")
-        print peptide.exon1,peptide.exon2,peptide.start,peptide.end,exon1.start,exon2.start
-        print stx1,exon1.plt_ed,exon2.plt_st,stx2
+        
+        y2=panel2+60*int(peptide.cluster)
+        draw.text((stx1,y2+10),peptide.number,font=font2,fill='black')
+        width=float(peptide.length)/scale
+        
+        varid=peptide.proteinID
+        tx_y2=variant_exons[varid][1].plt_ycor
+        if exon1==exon2:
+            draw.rectangle([stx1,y2,stx1+width,y2+10],fill=color,outline=color) #draw peptide below splice variants
+            draw.rectangle([stx1,tx_y2,stx1+width,tx_y2+exonheight],fill=pep_shadow,outline=pep_shadow)#draw peptide on transcript
+        else:
+            draw.rectangle([stx1,y2,exon1.plt_ed,y2+10],fill=color,outline="black")
+            draw.rectangle([exon1.plt_ed,y2+4,exon2.plt_st,y2+6],fill=introncolor,outline=introncolor)
+            draw.rectangle([exon2.plt_st,y2,stx2,y2+10],fill=color,outline="black")
+            
+            draw.rectangle([stx1,tx_y2,exon1.plt_ed,tx_y2+exonheight],fill=pep_shadow,outline=pep_shadow)
+            draw.rectangle([exon2.plt_st,tx_y2,stx2,tx_y2+exonheight],fill=pep_shadow,outline=pep_shadow)
+            
+            
+            print peptide.exon1,peptide.exon2,peptide.start,peptide.end,exon1.start,exon2.start
+            print stx1,exon1.plt_ed,exon2.plt_st,stx2
 
 
 
@@ -222,36 +252,7 @@ for i in range(0,len(uniq_cluster)):
             draw.text((barstart+mid,y4),xlabel,font=font2,fill='black')
             j+=1
 
-###draw mapped peptide on the transcript######
-im2=Image.new('RGB',(setwidth,setheight),'#eee')    
-draw2=ImageDraw.Draw(im2)
 
-for peptide in peparray:
-    if peptide.start==None:
-        continue;
-    varid=peptide.proteinID
-    
-    color=(132,112,255)
-    exon1=variant_exons[varid][int(peptide.exon1)] #exon1 and exon2 are EXON object
-    exon2=variant_exons[varid][int(peptide.exon2)]
-
-    if peptide.strand=="+":
-        stx1=abs(peptide.start-exon1.start)/scale+exon1.plt_st
-        stx2=abs(peptide.end-exon2.start)/scale+exon2.plt_st
-    else:
-        stx1=abs(peptide.start-exon1.end)/scale+exon1.plt_st
-        stx2=abs(peptide.end-exon2.end)/scale+exon2.plt_st
-
-    y2=variant_exons[varid][1].plt_ycor
-
-    width=float(peptide.length)/scale
-    if exon1==exon2:
-        draw.rectangle([stx1,y2,stx1+width,y2+exonheight],fill=color,outline=color)
-    else:
-        draw.rectangle([stx1,y2,exon1.plt_ed,y2+exonheight],fill=color,outline="black")
-        draw.rectangle([exon2.plt_st,y2,stx2,y2+exonheight],fill=color,outline="black")
-    
-newimage=Image.blend(im,im2,0.3)
-imagename=varids+'_pattern_'+sample+'.tiff'
-newimage.save(imagename,dpi=(300,300))
+imagename=id+'_pattern_'+sample+'.tiff'
+im.save(imagename,dpi=(300,300))
 print imagename+' saved'
