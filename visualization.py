@@ -104,7 +104,7 @@ start=400 #start position for first subexon
 height=50
 background='#eee' #grey color
 setwidth1=start+max_transcript+20*len(exon_chr)
-setwidth2=400+230*max(uniqcount)
+setwidth2=400+(samplesize*25+35)*max(uniqcount)
 
 setwidth=max(setwidth1,setwidth2)
 setheight=200+60*len(variant_exon)+60*len(uniq_cluster)+yaxis
