@@ -1,11 +1,10 @@
 import sys
-from Bio import SeqIO
-from collections import OrderedDict
+import os
+import getopt
 import operator
 import Image, ImageDraw, ImageFont
 from mapping_EVDB import EXON,ISOFORM,PEPTIDE
 import numpy
-import matplotlib.pyplot as plt
 
 def drawxy(ymax):#ymax is the maximum peptide ratio
     draw.text((200,axis_start),'ratio',font=font,fill='black')
@@ -27,8 +26,20 @@ def histogram(peptide):#take in peptide object
 
 
 ###################Function part end###############################
-sample=sys.argv[1]
-gene=sys.argv[2]
+format="png" #default image output format
+
+################  Comand-line arguments ################
+if len(sys.argv[1:])<=1:  ### Indicates that there are insufficient number of command-line arguments
+    print "Warning! wrong command, please read the mannual in Readme.txt."
+else:
+    options, remainder = getopt.getopt(sys.argv[1:],'', ['f=','prefix=','gene=',])
+    for opt, arg in options:
+        if opt == '--prefix': sample=arg
+        elif opt == '--f': format=arg
+        elif opt == '--gene': gene=arg
+        else:
+            print "Warning! Command-line argument: %s not recognized. Exiting..."
+
 inputfilename=sample+'_mappingout.txt'
 handle1=open(inputfilename)
 peparray=[]
@@ -271,6 +282,6 @@ for variant in variant_exon.keys():
 
 newimage=Image.blend(im,im2,0.3)
 
-imagename=gene+'_pattern_'+sample+'.tiff'
+imagename=gene+'_pattern_'+sample+'.'+format
 newimage.save(imagename,dpi=(300,300))
 print imagename+' saved'

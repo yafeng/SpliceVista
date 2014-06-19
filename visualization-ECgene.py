@@ -29,6 +29,7 @@ def histogram(peptide):#take in peptide object
 ###################Function part end###############################
 
 scale=5 #default, scale 3 base into 1 pixel
+format="png" #default image output format
 ################  Comand-line arguments ################
 if len(sys.argv[1:])<=1:  ### Indicates that there are insufficient number of command-line arguments
     print "Warning! wrong command, please read the mannual in Readme.txt."
@@ -36,12 +37,13 @@ else:
     options, remainder = getopt.getopt(sys.argv[1:],'', ['sample=',
                                                          'scale=',
                                                          'gene-structure-file=',
-                                                         'id='])
+                                                         'id=','f='])
     for opt, arg in options:
         if opt == '--sample': sample=arg
         elif opt == '--scale': scale=int(arg)
         elif opt == '--gene-structure-file':ECfilename=arg
         elif opt == '--id':id=arg
+        elif opt == '--f': format=arg
         else:
             print "Warning! Command-line argument: %s not recognized. Exiting..." % opt; sys.exit()
 
@@ -253,6 +255,6 @@ for i in range(0,len(uniq_cluster)):
             j+=1
 
 
-imagename=id+'_pattern_'+sample+'.tiff'
+imagename=id+'_pattern_'+sample+'.'+format
 im.save(imagename,dpi=(300,300))
 print imagename+' saved'
