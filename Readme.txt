@@ -132,10 +132,9 @@ Section II - Investigation of novel splice variants in your data
   Command: Python converter.py --i Exp1_searchdata.txt --prefix Exp1 --database ECgene
 3)Group PSMs into peptides
   Command: Python mergepsm.py Exp1
-4)Skip download.py if you already downloaded the EVDB database files.
-5)Cluster peptides based on quantitative pattern.
+4)Cluster peptides based on quantitative pattern.
   Command: python clusterpeptide.py --i Exp1_pepdata.txt --o Exp1_pepcluster.txt
-6)Map peptides to splice variants in ECgene database and assign genomic coordinates.
+5)Map peptides to splice variants in ECgene database and assign genomic coordinates.
 Before running this step, you need to download ECgene protein sequence file (same evidence level used in searching peptide spectra) and gene structure file from ECgene database website. http://genome.ewha.ac.kr/ECgene/.
 
 python mapping_ECgene.py --i Exp1_pepcluster.txt --prefix Exp1 --ECgene hg18_b1_high_gene.txt --ECprotein hg18_b1_high_pep.txt
@@ -144,7 +143,7 @@ python mapping_ECgene.py --i Exp1_pepcluster.txt --prefix Exp1 --ECgene hg18_b1_
 --ECgene gene structure file from ECgene database
 --ECprotein protein sequence file from ECgene database
 
-7) Visualise peptides aligned with ECgene splice variants.
+6) Visualise peptides aligned with ECgene splice variants.
 If you want to visualize a peptide from sample Exp1_ECgene mapped to ECgene splice variant H6C12216.1, you can use the following command.
 Command: python visualization-ECgene.py --sample ECgene --id H6C12216 --scale 5 --gene-structure-file hg18_b1_high_gene.txt --f png
 You should always use the same gene structure file as used in mapping step. 
