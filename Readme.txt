@@ -144,8 +144,8 @@ python mapping_ECgene.py --i Exp1_pepcluster.txt --prefix Exp1 --ECgene hg18_b1_
 --ECprotein protein sequence file from ECgene database
 
 6) Visualise peptides aligned with ECgene splice variants.
-If you want to visualize a peptide from sample Exp1_ECgene mapped to ECgene splice variant H6C12216.1, you can use the following command.
-Command: python visualization-ECgene.py --sample ECgene --id H6C12216 --scale 5 --gene-structure-file hg18_b1_high_gene.txt --f png
+If you want to visualize a peptide along with ECgene splice variants from gene H6C12216 in Exp1, you can use the following command.
+Command: python visualization-ECgene.py --sample Exp1 --id H6C12216 --scale 5 --gene-structure-file hg18_b1_high_gene.txt --f png
 You should always use the same gene structure file as used in mapping step. 
 --scale is to control the scaling of intron and exon size.
 --f is to set image output format,All images generated have dpi=300 resolution.
