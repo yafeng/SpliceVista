@@ -35,7 +35,7 @@ def main(): #clustering and write output
 if __name__=='__main__':
     ################  Default  ################
     method = 'average'
-    metric = 'euclidean'
+    metric = 'correlation'
     
     ################  Comand-line arguments ################
     if len(sys.argv[1:])<=1:  ### Indicates that there are insufficient number of command-line arguments
