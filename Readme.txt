@@ -11,7 +11,7 @@ https://groups.google.com/forum/#!forum/splicevista-discussion-group
 SpliceVista was written in Python 2.7.2. It contains six python scripts: converter.py, mergepsm.py, download.py, clusterpeptide.py, mapping.py and visualization.py. The following python packages need to be installed for SpliceVista to work: 
 
 Python (For windows, https://www.python.org/downloads/release/python-279/)
-Biopython (http://biopython.org/wiki/Download, for windows installation file, choose  biopython-1.65.win32-py2.7.exe)
+Biopython (http://biopython.org/wiki/Download)
 numpy and scipy (http://www.scipy.org/scipylib/download.html)
 Python Image library (usually included when you install python)
 
