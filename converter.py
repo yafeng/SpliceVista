@@ -94,7 +94,7 @@ if __name__=='__main__':
                 newcols=map(float,cols[2:])
                 proteinID=cols[1]
                 cols.insert(1,acclist[proteinID])
-                outfile.write("\t".join(cols))
+                outfile.write("\t".join(cols)+"\n")
             except ValueError: #skip PSMs with missing values
                 continue;
 
