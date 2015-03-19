@@ -2,7 +2,7 @@ import sys
 import os
 import getopt
 import operator
-import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFont
 from mapping_EVDB import EXON,ISOFORM,PEPTIDE
 import numpy
 
