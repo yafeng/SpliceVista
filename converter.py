@@ -13,6 +13,10 @@ def main():
             if database=="ECgene":
                 ECgene=proteinID.split(".")[0]
                 genename.append(db.get(ECgene,ECgene))
+            elif database=="uniprot":
+                if "-" in proteinID:
+                    proteinID=proteinID[:proteinID.index("-")]
+                genename.append(db.get(proteinID,"None"))
             else:
                 genename.append(db.get(proteinID,"None"))
         
@@ -22,13 +26,11 @@ def main():
             acclist[protein_acc]=";".join(genename)
         
         N=N+1
-        if N%1000==0:
-            print N,'protein groups processed'
+    print N,'protein groups processed'
 
 if __name__=='__main__':
     ################  Default  ################
     database = 'ensembl'
-    n='0' #normalization option
     
     ################  Comand-line arguments ################
     if len(sys.argv[1:])<=1:  ### Indicates that there are insufficient number of command-line arguments
