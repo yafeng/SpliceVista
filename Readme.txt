@@ -54,9 +54,10 @@ The first argument --i is the input file, the second is the prefix of output fil
 --database specify the database was used to search peptide spectra. Options are “ensembl”, “uniprot”, “IPI”,  “ECgene”.
 
 Step3: group PSMs into peptides
-Then for each peptide, calculate the mean of all PSMs' relative intensity and the standard deviation.
+For each peptide, calculate the median (default) or the mean of all PSMs' relative abundance in each sample.
 
-Command: Python mergepsm.py heavy
+Command: Python mergepsm.py --prefix heavy --method median
+--method options are median, mean.
 output: heavy_pepdata.txt
 
 Use the same prefix in previous step to group PSMs into peptides, the ratio of peptide is the mean of all the peptides PSM's relative ratios, standard deviation is calculated.
