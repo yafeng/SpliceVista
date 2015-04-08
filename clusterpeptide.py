@@ -21,8 +21,11 @@ def main(): #clustering and write output
             D = numpy.clip(d,0,2) #when using correlation, all values in distance matrix should be in range[0,2]
         else:
             D=d
+        try:
+            cutoff=float(t)
+        except ValueError:
+            print "please provide a numeric value for --t"; sys.exit()
         L = sch.linkage(D, method,metric)
-        cutoff=0.5*max(L[:,2])
         ind = sch.fcluster(L,cutoff,'distance')#distance is dissmilarity(1-correlation)
         p=numpy.array(pep_array)
         p=numpy.column_stack([p,ind])
@@ -36,30 +39,36 @@ if __name__=='__main__':
     ################  Default  ################
     method = 'average'
     metric = 'correlation'
+    t=0.4
     
     ################  Comand-line arguments ################
     if len(sys.argv[1:])<=1:  ### Indicates that there are insufficient number of command-line arguments
         print "Warning! wrong command, please read the mannual in Readme.txt."
-        print "Example: python clusterpeptide.py --i heavy_pepdata.txt --o heavy_pepcluster.txt"
+        print "Example: python clusterpeptide.py --i heavy_pepdata.txt --o heavy_pepcluster.txt --metric correlation --method average --t 0.4"
     else:
         options, remainder = getopt.getopt(sys.argv[1:],'', ['metric=',
                                                              'method=',
+                                                             't=',
                                                              'i=','o='])
         for opt, arg in options:
             if opt == '--metric': metric=arg
             elif opt == '--method': method=arg
+            elif opt == '--t': t=arg
             elif opt == '--i':infilename=arg
             elif opt == '--o':outfilename=arg
             else:
                 print "Warning! Command-line argument: %s not recognized. Exiting..." % opt; sys.exit()
     
     print metric,"metric is used"
+    print "linking method is",method
+    print "distance threshold of breaking into seperate clusters is",t
 
     handle=open(infilename,'r')
-    handle.readline()
+    output=open(outfilename,'w')
+    output.write(handle.readline())
     gene_peparray={}
     for line in handle:
-        row=line[:-1].split("\t")[:-1] # the last column in pepdata.txt is removed, a new cluster will be assigned to each peptide
+        row=line.strip().split("\t")[:-1] # the last column in pepdata.txt is removed, a new cluster will be assigned to each peptide
         gene=row[1]
         if gene not in gene_peparray:
             gene_peparray[gene]=[row]
@@ -68,11 +77,6 @@ if __name__=='__main__':
 
     print 'there are',len(gene_peparray),'genes in total'
     handle.close()
-    
-    newheader=['pep','gene symbol','protein accession','PSM count','foldchange','standard_dev','cluster']
-    firstline='\t'.join(newheader)+'\n'
-    output=open(outfilename,'w')
-    output.write(firstline)
     
     i=0
     for gene in gene_peparray.keys():

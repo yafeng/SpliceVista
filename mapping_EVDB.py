@@ -49,70 +49,49 @@ def main(): #the main function for mapping peptides
     for i in range(len(peparray)):
         peptide=peparray[i]
         peptide.variants=[]
-        if peptide.proteinID[:3]=="SJP":
-            accrow=peptide.proteinID.split("_")
-            peptide.chr=accrow[2][3:]
-            peptide.strand=accrow[7]
-            if peptide.strand=="+":
-                peptide.start=int(accrow[3])
-                peptide.end=int(accrow[6])
-                peptide.trans_start=abs(int(accrow[4])-int(accrow[3]))
-                peptide.trans_end=abs(int(accrow[6])-int(accrow[5]))
-            if peptide.strand=="-":
-                peptide.start=int(accrow[6])
-                peptide.end=int(accrow[3])
-                peptide.trans_start=abs(int(accrow[6])-int(accrow[5]))
-                peptide.trans_end=abs(int(accrow[4])-int(accrow[3]))
+        CDS=""
+        klist=[]
+        for i in range(0,len(variant_list)):
+            pep_index=str(record_dict[variant_list[i]].seq).find(peptide.seq)
+            if pep_index!=-1:
+                peptide.variants.append(variant_list[i])
+                k=i 
+                CDR=record_dict[variant_list[i]].description.split('|')[3]
+                CDS=CDR[CDR.index("=")+1:] #transcript coding start position
+                if CDR[-1]!="=":
+                    klist.append(i)
         
-            for subexon in gene_subexon[gene]:
-                if peptide.start>=min(subexon.start,subexon.end) and peptide.start<=max(subexon.start,subexon.end):
-                    peptide.exon1=subexon.number
-                if peptide.end>=min(subexon.start,subexon.end) and peptide.end<=max(subexon.start,subexon.end):
-                    peptide.exon2=subexon.number
-        else:
-            CDS=""
-            klist=[]
-            for i in range(0,len(variant_list)):
-                pep_index=str(record_dict[variant_list[i]].seq).find(peptide.seq)
-                if pep_index!=-1:
-                    peptide.variants.append(variant_list[i])
-                    k=i 
-                    CDR=record_dict[variant_list[i]].description.split('|')[3]
-                    CDS=CDR[CDR.index("=")+1:] #transcript coding start position
-                    if CDR[-1]!="=":
-                        klist.append(i)
+        num=len(peptide.variants)
+        if len(klist)>1:
+            k=klist[0] #k decides which splice variant in the list the peptide will be mapped to.
+        if num!=0:# if the peptide map to at least one of splice variants
+            n=str(record_dict[variant_list[k]].seq).index(peptide.seq)
+            CDR=record_dict[variant_list[k]].description.split('|')[3]
+            CDS=CDR[CDR.index("=")+1:] #CDS, trans start 
+            if CDS=="":
+                CDR=record_dict[variant_list[k]].description.split('|')[1]
+                CDS=CDR[CDR.index("=")+1:]
             
-            num=len(peptide.variants)
-            if len(klist)>1:
-                k=klist[0] #k decides which splice variant in the list the peptide will be mapped to.
-            if num!=0:# if the peptide map to at least one of splice variants
-                n=str(record_dict[variant_list[k]].seq).index(peptide.seq)
-                CDR=record_dict[variant_list[k]].description.split('|')[3]
-                CDS=CDR[CDR.index("=")+1:] #CDS, trans start 
-                if CDS=="":
-                    CDR=record_dict[variant_list[k]].description.split('|')[1]
-                    CDS=CDR[CDR.index("=")+1:]
+            peptide.trans_start=int(CDS)+n*3
+            peptide.trans_end=peptide.trans_start+3*len(peptide.seq)-1
+            peptide.chr=variant_dic[variant_list[k]].chr
+            peptide.strand=variant_dic[variant_list[k]].strand
+            
+            exons=variant_exon[variant_list[k]]
+            for exon in exons:
+                if peptide.trans_start<=exon.trans_end and peptide.trans_start>=exon.trans_start:
+                    peptide.exon1=exon.number
+                    if peptide.strand=='+':
+                        peptide.start=exon.start+(peptide.trans_start-exon.trans_start)
+                    else:
+                        peptide.start=exon.start-(peptide.trans_start-exon.trans_start)
                 
-                peptide.trans_start=int(CDS)+n*3
-                peptide.trans_end=peptide.trans_start+3*len(peptide.seq)-1
-                peptide.chr=variant_dic[variant_list[k]].chr
-                peptide.strand=variant_dic[variant_list[k]].strand
-                
-                exons=variant_exon[variant_list[k]]
-                for exon in exons:
-                    if peptide.trans_start<=exon.trans_end and peptide.trans_start>=exon.trans_start:
-                        peptide.exon1=exon.number
-                        if peptide.strand=='+':
-                            peptide.start=exon.start+(peptide.trans_start-exon.trans_start)
-                        else:
-                            peptide.start=exon.start-(peptide.trans_start-exon.trans_start)
-                    
-                    if peptide.trans_end<=exon.trans_end and peptide.trans_end>=exon.trans_start:
-                        peptide.exon2=exon.number
-                        if peptide.strand=='+':
-                            peptide.end=exon.start+peptide.trans_end-exon.trans_start
-                        else:
-                            peptide.end=exon.start-(peptide.trans_end-exon.trans_start)
+                if peptide.trans_end<=exon.trans_end and peptide.trans_end>=exon.trans_start:
+                    peptide.exon2=exon.number
+                    if peptide.strand=='+':
+                        peptide.end=exon.start+peptide.trans_end-exon.trans_start
+                    else:
+                        peptide.end=exon.start-(peptide.trans_end-exon.trans_start)
     
     if peptide.strand=="+":
         peparray.sort(key=operator.attrgetter('start'))
@@ -213,7 +192,7 @@ if __name__=='__main__':
     output_handle=open(output1,'w')
     headline1=['peptide sequence','peptide numbering',
                'peptide length','gene symbol','protein accession','PSM count','ratio',
-               'standard_dev','PQPQ cluster','known variants NO.','NOMV',
+               'variation between PSMs','PQPQ cluster','known variants NO.','NOMV',
                'known variants peptide is mapped to','chr','chr_start','chr_end','strand',
                'trans_start','trans_end','exon1','exon2']
     output_handle.write('%s\n'%('\t'.join(headline1)))
