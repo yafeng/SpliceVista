@@ -54,12 +54,15 @@ The first argument --i is the input file, the second is the prefix of output fil
 --database specify the database was used to search peptide spectra. Options are “ensembl”, “uniprot”, “IPI”,  “ECgene”.
 
 Step3: group PSMs into peptides
-Then for each peptide, calculate the mean of all PSMs' relative intensity and the standard deviation.
+For each peptide, calculate the median (default) or the mean of all PSMs' relative abundance in each sample.
 
-Command: Python mergepsm.py heavy
+Command: Python mergepsm.py --prefix heavy --method median
+--method options are median, mean.
 output: heavy_pepdata.txt
 
-Use the same prefix in previous step to group PSMs into peptides, the ratio of peptide is the mean of all the peptides PSM's relative ratios, standard deviation is calculated.
+Use the same prefix in previous step to group PSMs into peptides, if mean is used as method,
+the ratio of peptide is the mean of all the peptides PSM's relative ratios, standard deviation is calculated.
+If median is used as method, the ratio of peptide is the median of all the peptides PSM's relative ratios, median absolute deviation is calculated.
 Before clusterpeptide.py is used, all peptides will be assigned to cluster 0.
 
 Step4: Download data from EVDB and GenBank - download.py (You can skip this and download HUMAN splice variant database (EVDB) files directly from the following link: https://www.dropbox.com/sh/q8vo542udkdbdwl/7SYS9HF3O8. After that, copy and replace the three files in SpliceVista directory)
