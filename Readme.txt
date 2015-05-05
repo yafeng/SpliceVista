@@ -34,8 +34,8 @@ https://www.dropbox.com/sh/tgid20tv6h31fqj/AAA6TZ8OJzlNbQRkEf7xnWxia?dl=0
 Section I - Investigation of known splice variants in your data
 Step1: prepare the input file for SpliceVista
 First, you need to extract PSM data from the output file of database searching and format them in a tab-delimited text file like this:
-Sequence	Accession	ratio_s1	ratio_s2	ratio_s3	ratio_s4	ratio_s5	6	7	8
-qDmPNAmPVSELTDk	ENSP00000000233	1.046	0.954	0.835	0.984	1.092	0.89	0.946	0.836
+Sequence	Accession	ratio_s1	ratio_s2	ratio_s3	ratio_s4
+qDmPNAmPVSELTDk	ENSP00000000233	1.046	0.954	0.835	0.984
 
  (you need to calculate peptide ratio (relative abundance in each sample) before you run next step, the header is not necessary to be same as here)
 Tip: arrange the needed columns in EXCEL, and then save it in a tab-delimited text file.
