@@ -99,7 +99,7 @@ This step will take time depending the number of new splice variant to be downlo
 
 Step5: cluster peptides based on quantitative pattern
 This step mimics the PQPQ algorithm but much simplified. It only does the peptide clustering which groups peptides based on their quantitative patterns over samples, each peptide will be assigned a number to indicate which cluster it belongs to. If one protein has only one unique peptide, then this peptide will get a cluster '0'  instead.
-Command: python clusterpeptide.py --i heavy_pepdata.txt --o heavy_pepcluster.txt
+Command: python clusterpeptide.py --i heavy_pepdata.txt --o heavy_pepcluster.txt --metric correlation --method average
 
 --i argument should be _pepdata.txt file from step3
 --o argument is the name of output file. There are some other options to use. 
