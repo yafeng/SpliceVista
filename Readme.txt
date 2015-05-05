@@ -43,8 +43,7 @@ It is OK to have multiple IDs in the Accession column, but it has to be separate
 	
 Here, we will use the heavy_testfile.txt file (a tab-delimited text file as described in step1) to illustrate the workflow.
 
-(If you have already grouped PSMs into peptides, just run step 2, rename output file from _psmdata.txt to _pepdata.txt and skip step 3)
-
+(If you have already grouped PSMs into peptides, run step 2 and step 3 as usual.)
 Step2: insert gene symbol for each PSM- converter.py
 Insert gene symbol for each PSM. Each protein accession will be assigned a gene symbol which will be used to retrieve its known splice variants in the next step. This is done by converter.py.
 
@@ -53,15 +52,16 @@ Command: Python converter.py --i heavy_testfile.txt --prefix heavy --database en
 The first argument --i is the input file, the second is the prefix of output file. Given the prefix in the example, you will get an output file named as heavy_psmdata.txt. 
 --database specify the database was used to search peptide spectra. Options are “ensembl”, “uniprot”, “IPI”,  “ECgene”.
 
-NOTE: when you start to analyse your own data, this command can only be used if you have HUMAN protein ID in your data. 
-If you have non-human dataset, format your data in the following way:
-peptide gene_symbol protein_ID ratio_sample1 ratio_sample2 ratio_sample3 ...
+(NOTE: when you start to analyse your own data, this command can only be used if you have HUMAN protein ID in your data. 
+For non-human dataset, you need to insert gene symbol (in the column between peptide sequence and protein ID) by yourself. So it looks like this:
+peptide gene_symbol protein_ID ratio_sample1 ratio_sample2 ratio_sample3 ...)
 
-Then you can start from step 4 directly.
+Then you can continue to step3.
 
 Step3: group PSMs into peptides
 For each peptide, calculate the median (default) or the mean of all PSMs' relative abundance in each sample.
-
+Step3 will not make a difference on quantitative data if PSMs are already grouped into peptides)
+ 
 Command: Python mergepsm.py --prefix heavy --method median
 --method options are median, mean.
 output: heavy_pepdata.txt
