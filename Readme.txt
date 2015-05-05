@@ -34,10 +34,10 @@ https://www.dropbox.com/sh/tgid20tv6h31fqj/AAA6TZ8OJzlNbQRkEf7xnWxia?dl=0
 Section I - Investigation of known splice variants in your data
 Step1: prepare the input file for SpliceVista
 First, you need to extract PSM data from the output file of database searching and format them in a tab-delimited text file like this:
-Sequence	Accession	sample1	2	3	4	5	6	7	8
+Sequence	Accession	ratio_s1	ratio_s2	ratio_s3	ratio_s4	ratio_s5	6	7	8
 qDmPNAmPVSELTDk	ENSP00000000233	1.046	0.954	0.835	0.984	1.092	0.89	0.946	0.836
 
- (you need to calculate peptide ratio (relative abundance in each sample) before you run next step)
+ (you need to calculate peptide ratio (relative abundance in each sample) before you run next step, the header is not necessary to be same as here)
 Tip: arrange the needed columns in EXCEL, and then save it in a tab-delimited text file.
 It is OK to have multiple IDs in the Accession column, but it has to be separated by semi comma (;) symbol. Peptide sequence can contain letters in lower case.
 	
@@ -52,6 +52,12 @@ Command: Python converter.py --i heavy_testfile.txt --prefix heavy --database en
 
 The first argument --i is the input file, the second is the prefix of output file. Given the prefix in the example, you will get an output file named as heavy_psmdata.txt. 
 --database specify the database was used to search peptide spectra. Options are “ensembl”, “uniprot”, “IPI”,  “ECgene”.
+
+NOTE: when you start to analyse your own data, this command can only be used if you have HUMAN protein ID in your data. 
+If you have non-human dataset, format your data in the following way:
+peptide gene_symbol protein_ID ratio_sample1 ratio_sample2 ratio_sample3 ...
+
+Then you can start from step 4 directly.
 
 Step3: group PSMs into peptides
 For each peptide, calculate the median (default) or the mean of all PSMs' relative abundance in each sample.
