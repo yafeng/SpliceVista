@@ -157,7 +157,7 @@ if __name__=='__main__':
         exon=EXON(gene=row[1],chr=row[2],strand=row[3],variant=row[4],number=row[5],
                   start=int(row[6]),end=int(row[7]),trans_start=int(row[8]),trans_end=int(row[9]))
         
-        gene=row[1]
+        gene=row[0]
         variantID=row[4]
         if variantID not in variant_exon:
             variant=ISOFORM(id=variantID,chr=row[2],strand=row[3])
@@ -178,10 +178,11 @@ if __name__=='__main__':
     for line in handle3:
         row=line.strip().split("\t")
         subexon=EXON(gene=row[1],chr=row[2],strand=row[3],number=int(row[4]),start=int(row[6]),end=int(row[7]))
-        if row[1] not in gene_subexon:
-            gene_subexon[row[1]]=[subexon]
+        gene=row[0]
+        if gene not in gene_subexon:
+            gene_subexon[gene]=[subexon]
         else:
-            gene_subexon[row[1]].append(subexon)
+            gene_subexon[gene].append(subexon)
 
     handle3.close()
     
