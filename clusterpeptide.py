@@ -13,7 +13,7 @@ def main(): #clustering and write output
     if len(pep_array)>1:
         matrix=[]
         for i in range(0,len(pep_array)):
-            matrix.append(pep_array[i][4].split(','))
+            matrix.append(pep_array[i][4].replace('\"',"").split(','))
 
         dataMatrix=numpy.array(matrix,dtype=float)
         d = sch.distance.pdist(dataMatrix,metric)# vector of pairwise distances
@@ -37,14 +37,14 @@ def main(): #clustering and write output
     
 if __name__=='__main__':
     ################  Default  ################
-    method = 'average'
+    method = 'complete'
     metric = 'correlation'
     t=0.4
     
     ################  Comand-line arguments ################
     if len(sys.argv[1:])<=1:  ### Indicates that there are insufficient number of command-line arguments
         print "Warning! wrong command, please read the mannual in Readme.txt."
-        print "Example: python clusterpeptide.py --i heavy_pepdata.txt --o heavy_pepcluster.txt --metric correlation --method average --t 0.4"
+        print "Example: python clusterpeptide.py --i heavy_pepdata.txt --o heavy_pepcluster.txt --metric correlation --method complete --t 0.4"
     else:
         options, remainder = getopt.getopt(sys.argv[1:],'', ['metric=',
                                                              'method=',

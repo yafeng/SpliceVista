@@ -80,7 +80,7 @@ if __name__=='__main__':
     gene_psmarray={}
     pep_ensp={}
     for line in handle:
-        row=line.strip().replace(",",".").split("\t")
+        row=line.strip().replace(",",".").replace('\"',"").split("\t")
         try:
             pep=row[0].upper()
             gene=row[1]
