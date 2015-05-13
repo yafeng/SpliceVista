@@ -78,7 +78,7 @@ handle2=open('splicingvar.txt')
 variant_exon={}
 for line in handle2:
     row=line[:-1].split("\t")
-    if row[1]==gene:
+    if row[0]==gene:
         exon=EXON(gene=row[1],chr=row[2],strand=row[3],variant=row[4],number=int(row[5]),
                   start=int(row[6]),end=int(row[7]),trans_start=int(row[8]),trans_end=int(row[9]))
         
@@ -101,7 +101,7 @@ gene_subexon=[]
 exon_chr={}
 for line in handle3:
     row=line[:-1].split("\t")
-    if row[1]==gene:
+    if row[0]==gene:
         subexon=EXON(gene=row[1],chr=row[2],strand=row[3],number=int(row[4]),start=int(row[6]),end=int(row[7]))
         gene_subexon.append(subexon)
         if subexon.number not in exon_chr:
