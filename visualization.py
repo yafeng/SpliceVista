@@ -38,7 +38,7 @@ else:
         elif opt == '--f': format=arg
         elif opt == '--gene': gene=arg
         else:
-            print "Warning! Command-line argument: %s not recognized. Exiting..."
+            print "Warning! Command-line argument: %s not recognized. Exiting..." % opt; sys.exit()
 
 inputfilename=sample+'_mappingout.txt'
 handle1=open(inputfilename)
@@ -55,6 +55,10 @@ for line in handle1:
 
 handle1.close()
 
+if len(peparray)==0:
+    print "%s not in the mappingout.txt file. Exiting..." % gene; sys.exit()
+
+print len(peparray),"peptides identified from gene",gene
 
 ratio=[]
 cluster=[]
@@ -63,7 +67,9 @@ for peptide in peparray:
     cluster.append(peptide.cluster)
 
 uniq_cluster=list(set(cluster))
-print max(ratio),len(uniq_cluster)
+print "maximum peptide ratio",max(ratio)
+print len(uniq_cluster),"unique peptide cluster discovered for this gene"
+
 ymax=int(float(max(ratio)))+1
 yaxis=100+len(uniq_cluster)*120*ymax
 
@@ -84,6 +90,11 @@ for line in handle2:
 
 handle2.close()
 
+if len(variant_exon)==0:
+    print "%s doesn't have splice variant structure downloaded. Exiting..." % gene; sys.exit()
+
+print len(variant_exon),"known splice variants for gene",gene
+
 #read gene subexons coordinates from file
 handle3=open('subexon.txt')
 gene_subexon=[]
@@ -100,6 +111,8 @@ for line in handle3:
 
 handle3.close()
 
+if len(gene_subexon)==0:
+    print "%s doesn't have subexon structure downloaded. Exiting..." % gene; sys.exit()
 
 #set size for the image
 max_transcript=0 #maximum transcript length
@@ -132,6 +145,7 @@ draw.text((10,100),'Subexons: ',font=font,fill='black')
 width=0
 stx=0
 stx2=0
+y=100 #y axis of the subexon
 
 exon_plt_start={} #subexon start position in the plot
 exon_plt_end={} #subexon end position in the plot
@@ -140,7 +154,6 @@ for i in range(0,len(gene_subexon)):
     subexon=gene_subexon[i]
     stx1=(subexon.number-1)*20
     stx=stx1+stx2
-    y=100 #y axis of the subexon
     width=abs(subexon.start-subexon.end) #width of subexon
     y1=y+height/2-5 #y axix of the intron line
     
