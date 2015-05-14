@@ -134,7 +134,7 @@ if __name__=='__main__':
     gene_peparray={}
     for line in input_file:
         row=line.strip().split("\t")
-        gene=row[1]
+        gene=row[1].upper()
         peptide=PEPTIDE(seq=row[0],HGNC=gene,proteinID=row[2],PSMcount=int(row[3]),ratio=row[4],error=row[5],cluster=row[6])
         peptide.length=len(peptide.seq)
         if gene not in gene_peparray:
@@ -154,13 +154,13 @@ if __name__=='__main__':
     variant_exon={}
     for line in handle:
         row=line.strip().split("\t")
-        exon=EXON(gene=row[1],chr=row[2],strand=row[3],variant=row[4],number=row[5],
+        exon=EXON(gene=row[1],chr="chr"+row[2],strand=row[3],variant=row[4],number=row[5],
                   start=int(row[6]),end=int(row[7]),trans_start=int(row[8]),trans_end=int(row[9]))
         
-        gene=row[0]
+        gene=row[0].upper()
         variantID=row[4]
         if variantID not in variant_exon:
-            variant=ISOFORM(id=variantID,chr=row[2],strand=row[3])
+            variant=ISOFORM(id=variantID,chr="chr"+row[2],strand=row[3])
             variant_dic[variantID]=variant
             variant_exon[variantID]=[exon]
         else:
@@ -177,8 +177,8 @@ if __name__=='__main__':
     gene_subexon={}
     for line in handle3:
         row=line.strip().split("\t")
-        subexon=EXON(gene=row[1],chr=row[2],strand=row[3],number=int(row[4]),start=int(row[6]),end=int(row[7]))
-        gene=row[0]
+        subexon=EXON(gene=row[1],chr="chr"+row[2],strand=row[3],number=int(row[4]),start=int(row[6]),end=int(row[7]))
+        gene=row[0].upper()
         if gene not in gene_subexon:
             gene_subexon[gene]=[subexon]
         else:

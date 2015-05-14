@@ -221,7 +221,8 @@ for i in range(0,len(uniq_cluster)):
 
 
 for peptide in peparray:  #draw peptides for each cluster
-    if peptide.start==None:
+    if peptide.start==0:
+        print "Omit peptide %s which doesn't map to any of splice variants to this gene" % peptide.seq
         continue;
         
     color=colorlist[int(peptide.cluster)]
@@ -272,7 +273,7 @@ k=0
 for variant in variant_exon.keys():
     y=160+60*k
     for peptide in peparray:
-        if peptide.start==None:
+        if peptide.start==0:
             continue;
         
         color=(132,112,255)
