@@ -22,10 +22,7 @@ def main():
             if genearray[j][0].upper()==pep:
                 pepratio.append(genearray[j][3:])
     
-        try:
-            a=np.array(pepratio,dtype=float)
-        except ValueError:
-            continue;
+        a=np.array(pepratio,dtype=float)
         if method=="mean":
             mean=np.mean(a,axis=0)
             stdv=np.std(a,axis=0)
@@ -79,6 +76,7 @@ if __name__=='__main__':
 
     gene_psmarray={}
     pep_ensp={}
+    N=0 #count number of PSMs with missing values
     for line in handle:
         row=line.strip().replace(",",".").replace('\"',"").split("\t")
         try:
@@ -88,6 +86,7 @@ if __name__=='__main__':
             pep_ensp[pep]=ensp
         except IndexError:
             print row
+            print "check your file format! Program aborted"
             break;
         if gene=="None":#this will discard PSMs with unknown identity
             continue;
@@ -95,12 +94,17 @@ if __name__=='__main__':
             continue;
         if len(row[3:])!=samplesize:
             continue;
-        else:
+        try:
+            np.array(row[3:],dtype=float)
             if gene not in gene_psmarray:
                 gene_psmarray[gene]=[row]
             else:
                 gene_psmarray[gene].append(row)
+        except ValueError:
+            N+=1
+            continue;
 
+    print "skip %d PSMs with missing quant values" % N
     print 'there are',len(gene_psmarray),'genes in total'
     handle.close()
     
