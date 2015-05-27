@@ -13,7 +13,7 @@ SpliceVista was written in Python 2.7.2. It contains six python scripts: convert
 Python (For windows, https://www.python.org/downloads/release/python-279/)
 Biopython (http://biopython.org/wiki/Download)
 numpy and scipy (http://www.scipy.org/scipylib/download.html)
-Python Image library (usually included when you install python)
+Python Image library (PIL is not maintained, install pillow from here http://pillow.readthedocs.org/en/latest/installation.html)
 
 Manual
 Download SpliceVista using the following command if you use UNIX or LINUX system: (you might need to install git first, type the command in a terminal: apt-get install git-core)
