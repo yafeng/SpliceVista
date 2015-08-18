@@ -26,7 +26,9 @@ Note: After you have download SpliceVista, DO NOT move or rename original and ou
 
 3. Open a terminal and cd to the SpliceVista folder. No need to make compile, you can start to use it.
 
-The manual consists of two walk through examples:
+
+HOW TO USE:
+The manual consists of two walk through examples.
 EXAMPLE I: known splice variant study
 
 EXAMPLE II: novel splice variants study
@@ -108,8 +110,8 @@ Output: splicingvar.txt, subexon.txt, varseq.fa, gene_notfound.txt
 You can run step4 command many times, only new splice variants that are not in the files will be downloaded
 
 Note: DO NOT download splice variants for different species under the same directory, or files will be overwritten. SpliceVista Package contains three empty files splicingvar.txt, subexon.txt, varseq.fa that will store downloaded splice variant information. The output files splicingvar.txt and subexon.txt contain exon composition of each variant, both genomic and transcript coordinates. The file varseq.fa will store the amino acid sequences of all splice variants. The gene_notfound.txt file contains gene symbols which are not found in the EVDB database. 
-Tip: if you have multiple sample files in one project, it is better to put all the files under one directory named by the project and use different sample names for each file. Because usually there is an overlap of identified proteins among different samples, the script download.py first check if the splice variants of identified protein and the variant sequences have been downloaded so that it avoids downloading the data for same proteins multiple times. 
-This step will take time depending the number of new splice variant to be downloaded from the database (on average, it takes 1 second to retrieve information from EVDB and NCBI for one splice variant). In order not to cause Internet traffic, it is highly recommended to download these files first from the link provided above.
+Tip: if you have multiple sample files in one project, it is better to put all the files under one directory named by the project and use different sample names for each file. Because there is usually an overlap of identified proteins among different samples, the script download.py first check if the splice variants of identified protein and the variant sequences have been downloaded so that it avoids downloading the data for same proteins multiple times. 
+This step will take time depending the number of new splice variant to be downloaded from the database (on average, it takes 1 second to retrieve information from EVDB and NCBI for one splice variant). In order not to cause Internet traffic, it is highly recommended to download HUMAN splice variant database files first from the link provided above.
 
 Step5: cluster peptides based on quantitative pattern
 This step mimics the PQPQ algorithm but much simplified. It only does the peptide clustering which groups peptides based on their quantitative patterns over samples, each peptide will be assigned a number to indicate which cluster it belongs to. If one protein has only one unique peptide, then this peptide will get a cluster '0'  instead.
@@ -121,7 +123,7 @@ Command: python clusterpeptide.py --i heavy_pepdata.txt --o heavy_pepcluster.txt
 For all available clustering metric, check on website http://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.distance.pdist.html?highlight=distance.pdist#scipy.spatial.distance.pdist
 --method defines the way of calculating the distance between the newly formed clusters.  Available options are "single", "complete", "average" and "weighted". "average" is the default.
 
-Step6: Map peptides to its genomic coordinates
+Step6: Map peptides to transcripts
 Map peptides to known splice variants in EVDB database-mapping_EVDB.py
 The script in this step maps identified peptides from (uniprot, ensemble and IPI database) to splice variants in EVDB database (assembly hg19 for human). 
 NOTE: if step5 is skipped, the input file of this step is the output of step3, which is heavy_pepdata.txt. If step5 is not skipped, the input file of this step is the output of step5, which is heavy_pepcluster.txt.
@@ -131,7 +133,7 @@ Command: Python mapping_EVDB.py heavy_pepcluster.txt heavy (if step5 is not skip
 
 The first argument is input file and the second is the prefix of output file
 Output: heavy_mappingout.txt, heavy_genestatistic.txt (The content of these two output files can be seen in supplementary file 1 table S1 and S2.)
-If you encounter “KeyError”, please run step4 again.
+If you encounter “KeyError” (meaning one splice variant was not sucessfully downloaed in step4), so please run step4 again.
 
 The file mappingout.txt is peptide based format in which each row is one unique peptide. This file will be used for visualization. The file genestatistic.txt is gene based format in which each row is one gene.
 Very few peptides in mapping output might have no coordinates reported. Since peptide sequence are mapped to splice transcripts sequences extracted in Genbank, there might be very few peptides identified (depending on the reference database used in the searching engine) that are not found in Genbank. And peptides with unknown letters (X) in the sequence will not be given any coordinate. 
@@ -144,7 +146,7 @@ Command: Python visualization.py --prefix heavy --gene ARF5 --f png
 —-f is to set image output format, default is png, other formats such as tiff, emf, jpg can be used depending on whether you installed corresponding library.
 Output:ARF5_pattern_heavy.png
 
-Always specify prefix first and then the gene you would like to plot. Gene symbol should be exactly the same as the one you see in the file genestatistic.txt. Next release version will allow users to set parameters of output image (such as format, size and resolution). Look Fig.2 in the paper for interpretation of the figure.
+Always specify prefix first (indicating in which sample file you want to see the identified peptides and splice variants for this gene) and then the gene name you would like to investigate. Gene symbol should be exactly the same as the one you see in the file genestatistic.txt. Look Fig.2 in the paper for interpretation of the figure.
 
 Now you are finished with the example I. 
 
