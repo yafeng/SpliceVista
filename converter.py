@@ -90,7 +90,7 @@ if __name__=='__main__':
     outfile.write("\t".join(cols))
 
     for line in infile2:
-        cols=line.strip().split('\t')
+        cols=line.strip().replace('\"',"").replace(",",".").split('\t')
         if len(cols[2:])==samplesize:
             try:
                 newcols=map(float,cols[2:])

@@ -10,7 +10,7 @@ def getuniqacc(infile,i): #get a unique accession id list out of file, i is the 
     infile.readline()
     for line in infile:
         acc=line.split('\t')[i]
-        if acc not in dic:
+        if acc not in dic and acc!="":
             dic[acc]=1
     
     return dic;

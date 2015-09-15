@@ -10,10 +10,15 @@ https://groups.google.com/forum/#!forum/splicevista-discussion-group
 
 SpliceVista was written in Python 2.7.2. It contains six python scripts: converter.py, mergepsm.py, download.py, clusterpeptide.py, mapping.py and visualization.py. The following python packages need to be installed for SpliceVista to work: 
 
-Python (For windows, https://www.python.org/downloads/release/python-279/)
-Biopython (http://biopython.org/wiki/Download)
-numpy and scipy (http://www.scipy.org/scipylib/download.html)
-Python Image library (PIL is not maintained, install pillow from here http://pillow.readthedocs.org/en/latest/installation.html)
+Prerequisite packages: Biopython, numpy, scipy, pillow
+
+Windows
+download Winpython2.7 here http://sourceforge.net/projects/winpython/files/
+numpy, scipy, pillow are included in Winpython.
+next is to install biopython.Download it here http://www.lfd.uci.edu/~gohlke/pythonlibs/
+choose one of them based on if your symstem is 32 or 64bit
+biopython‑1.65‑cp27‑none‑win32.whl (32bit)
+biopython‑1.65‑cp27‑none‑win_amd64.whl (64bit)
 
 Manual
 Download SpliceVista using the following command if you use UNIX or LINUX system: (you might need to install git first, type the command in a terminal: apt-get install git-core)
