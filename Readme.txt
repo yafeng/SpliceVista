@@ -23,6 +23,8 @@ choose one of them based on if your symstem is 32 or 64bit
 biopython‑1.65‑cp27‑none‑win32.whl (32bit)
 biopython‑1.65‑cp27‑none‑win_amd64.whl (64bit)
 
+open winpython and use downloaed .whl file to install biopython.
+
 2. Download SpliceVista using the following command if you use UNIX or LINUX system: (you might need to install git first, type the command in a terminal: apt-get install git-core)
 git clone https://github.com/yafeng/SpliceVista 
 
@@ -120,13 +122,14 @@ This step will take time depending the number of new splice variant to be downlo
 
 Step5: cluster peptides based on quantitative pattern
 This step mimics the PQPQ algorithm but much simplified. It only does the peptide clustering which groups peptides based on their quantitative patterns over samples, each peptide will be assigned a number to indicate which cluster it belongs to. If one protein has only one unique peptide, then this peptide will get a cluster '0'  instead.
-Command: python clusterpeptide.py --i heavy_pepdata.txt --o heavy_pepcluster.txt --metric correlation --method average
+Command: python clusterpeptide.py --i heavy_pepdata.txt --o heavy_pepcluster.txt --metric correlation --method average --t 0.4
 
 --i argument should be _pepdata.txt file from step3
 --o argument is the name of output file. There are some other options to use. 
 --metric defines the way to calculate the distance, “correlation is the default. Other options such as "cosine", "correlation" are also available. (if cosine is chosen, make sure vectors do not contain value greater than 1)
 For all available clustering metric, check on website http://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.distance.pdist.html?highlight=distance.pdist#scipy.spatial.distance.pdist
 --method defines the way of calculating the distance between the newly formed clusters.  Available options are "single", "complete", "average" and "weighted". "average" is the default.
+--t set distance cutoff for clustering, default is 0.4. (for pearson correlation, distance=1-correlation coefficient)
 
 Step6: Map peptides to transcripts
 Map peptides to known splice variants in EVDB database-mapping_EVDB.py
