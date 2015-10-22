@@ -6,29 +6,8 @@ from Bio import SeqIO
 from collections import OrderedDict
 from mapping_EVDB import ISOFORM,EXON,PEPTIDE
 
-########################Splicing Variants Structure#########
-def Transcript(start,end,list1,list2):#from a list of exon chr start coordiantes and end coordinates generates two list of tuples for each exon [(chr_start,chr_end)],[(Tran_start,Tran_end)]
-    exon_chr=[]
-    exon_tx=[]
-    tx=1
-    for i in range(len(list1)):
-        if int(exon.end)>start and int(exon.start)<start:
-            exon_chr.append((start,int(exon.end)))
-            exonlen=int(exon.end)-start
-            exon_tx.append((tx,exonlen+tx-1))
-            tx+=exonlen
-        elif int(exon.start)>start and int(exon.end)<end:
-            exon_chr.append((int(exon.start),int(exon.end)))
-            exonlen=int(exon.end)-int(exon.start)
-            exon_tx.append((tx,tx+exonlen-1))
-            tx+=exonlen
-        elif int(exon.end)>end and int(exon.start)<end:
-            exon_chr.append((int(exon.start),end))
-            exonlen=end-int(exon.start)
-            exon_tx.append((tx,exonlen+tx-1))
-    return exon_chr,exon_tx
 
-###################Function part end###############################
+###################define main Function ###############################
 def main(): #the main function for mapping peptides
     for i in range(len(peparray)):
         peptide=peparray[i]
@@ -41,9 +20,8 @@ def main(): #the main function for mapping peptides
         peptide.strand=variant.strand
         
         exons=variant_dic[variantID].exon
-        print variantID,len(exons)
         for exon in exons:
-            print exon.number,exon.start,exon.end,exon.trans_start,exon.trans_end
+            #print exon.number,exon.start,exon.end,exon.trans_start,exon.trans_end
             if peptide.trans_start<=exon.trans_end and peptide.trans_start>=exon.trans_start:
                 peptide.exon1=exon.number
                 if peptide.strand=='+':
@@ -65,25 +43,30 @@ def main(): #the main function for mapping peptides
     
     genePSMcount=0
     uniquecluster=[]
-    identified_variants=[]
+    identified_variants=[] # a variant is identified if a peptide uniquely mapped this variant
+    pep_number=0
+    variant_list=set(gene_variant[ECgene]) # all predicted variants from ECgene database
     #write output for in mappingout.txt
     for peptide in peparray:
+        mapped_variants=[] # splice variants contain this peptide sequences
         pep_number+=1
         genePSMcount+=peptide.PSMcount
         peptide.number=pep_number
         uniquecluster.append(peptide.cluster)
-        
+        for varid in variant_list:
+            if peptide.seq in variant_dic[varid].seq:
+                mapped_variants.append(varid)
         if len(variant_list)>1 and len(peptide.variants)==1:
             identified_variants+=peptide.variants
-        line="%s\t%d\t%d\t%s\t%s\t%d\t%s\t%s\t%s\t%d\t%d\t%s\t%s\t%d\t%d\t%s\t%d\t%d\t%s\t%s\n" % (peptide.seq,peptide.number,peptide.length,peptide.HGNC,peptide.proteinID,peptide.PSMcount,peptide.ratio,peptide.error,peptide.cluster,len(variant_list),len(peptide.variants),",".join(peptide.variants),peptide.chr,peptide.start,peptide.end,peptide.strand,peptide.trans_start,peptide.trans_end,peptide.exon1,peptide.exon2)
+        line="%s\t%d\t%d\t%s\t%s\t%d\t%s\t%s\t%s\t%d\t%d\t%s\t%s\t%d\t%d\t%s\t%d\t%d\t%s\t%s\n" % (peptide.seq,peptide.number,peptide.length,peptide.HGNC,peptide.proteinID,peptide.PSMcount,peptide.ratio,peptide.error,peptide.cluster,len(variant_list),len(peptide.variants),";".join(mapped_variants),peptide.chr,peptide.start,peptide.end,peptide.strand,peptide.trans_start,peptide.trans_end,peptide.exon1,peptide.exon2)
         
         output_handle.write(line)
-
+    
     #write output for in genestatistics.txt
     cluster=len(set(uniquecluster))
     uniquevar=list(set(identified_variants))
     num_var=len(uniquevar)
-    newline="%s\t%d\t%d\t%d\t%d\t%d\t%s\n"%(gene,cluster,len(variant_list),genePSMcount,
+    newline="%s\t%d\t%d\t%d\t%d\t%d\t%s\n"%(ECgene,cluster,len(variant_list),genePSMcount,
                                             len(peparray),num_var,",".join(uniquevar))
     output2_handle.write(newline)
 
@@ -97,50 +80,48 @@ if __name__=='__main__':
         options, remainder = getopt.getopt(sys.argv[1:],'', ['ECgene=',
                                                              'ECprotein=',
                                                              'i=','prefix='])
-        for opt, arg in options:
-            if opt == '--ECgene': gene_structure_file=arg
-            elif opt == '--ECprotein': protein_seq_file=arg
-            elif opt == '--i':infilename=arg
-            elif opt == '--prefix':prefix=arg
-            else:
-                print "Warning! Command-line argument: %s not recognized. Exiting..." % opt; sys.exit()
-    
+    for opt, arg in options:
+        if opt == '--ECgene': gene_structure_file=arg
+        elif opt == '--ECprotein': protein_seq_file=arg
+        elif opt == '--i':infilename=arg
+        elif opt == '--prefix':prefix=arg
+        else:
+            print "Warning! Command-line argument: %s not recognized. Exiting..." % opt; sys.exit()
+
     input_file=open(infilename,'r')
     input_file.readline()
-    gene_peparray=[] # store peptide info in _pepdata.txt
-    variant_dic={}
-    gene_variant={}
+    gene_peparray={} # store peptide info in _pepdata.txt
+    variant_dic={} # store ECvariant info in _pepdata.txt
+    gene_variant={} #store ECgene info in _pepdata.txt
     print "read peptide data file"
     for line in input_file:
         row=line.strip().split("\t")
         peptide=PEPTIDE(seq=row[0],HGNC=row[1],proteinID=row[2],PSMcount=int(row[3]),ratio=row[4],error=row[5],cluster=row[6])
-        peptide.variants=row[2].split(";")
-        ECvariant=peptide.variants[0]
-        ECgene=ECvariant.split(".")[0]
-        variant=ISOFORM(id=ECvariant)
         peptide.length=len(peptide.seq)
-        variant_dic[ECvariant]=variant
+        peptide.variants=row[2].split(";")
+        ECgene=peptide.variants[0].split(".")[0]
         gene_variant[ECgene]=[]
-        if ECgene not in gene_variant:
+        if ECgene not in gene_peparray:
             gene_peparray[ECgene]=[peptide]
         else:
             gene_peparray[ECgene].append(peptide)
 
-    
-    print peparray[0].proteinID
-    print variant_dic.keys()
-    print 'there are',len(peparray),'peptides in total'
+    print 'there are',len(gene_peparray),'genes in total'
+    print gene_variant.keys()
     input_file.close()
     print 'reading EC protein sequence file.....'
     
     protein_db=open(protein_seq_file,'r')
     for line in protein_db:
         row=line.strip().split('\t')
-        if row[0] in variant_dic:
-            variant_dic[row[0]].seq=row[1]
-    
+        geneid=row[0].split(".")[0]
+        if geneid in gene_variant:
+            variant=ISOFORM(id=row[0],seq=row[1])
+            variant_dic[row[0]]=variant
+
     protein_db.close()
-    
+    print "predicted variants for this gene"
+    print variant_dic.keys()
     gene_db=open(gene_structure_file,'r')
     
     print 'reading EC gene structure file.....'
@@ -199,31 +180,30 @@ if __name__=='__main__':
                     exon.end=chr_st
                     exon.number=len(chr_start_list)-i
                     variant_dic[variantID].exon.append(exon)
-    
-    
-    
-    
+
+
     gene_db.close()
     print 'start mapping...'
-    output1=prefix+'_mappingout.txt'
+    output1=prefix+'_ECmappingout.txt'
     
     output_handle=open(output1,'w')
-    headline1=['peptide sequence','peptide length','gene symbol','protein accession','PSM count','ratio',
+    headline1=['peptide sequence','peptide numbering','peptide length','gene symbol','protein accession','PSM count','ratio',
                'standard_dev','PQPQ cluster','ECvariants NO.','NOMV','ECvariant ID','chr','chr_start','chr_end','strand',
                'trans_start','trans_end','exon1','exon2']
     output_handle.write('%s\n'%('\t'.join(headline1)))
-    
-    output2=prefix+'_genestatistics.txt'
+   
+    output2=prefix+'_ECgenestatistics.txt'
     output2_handle=open(output2,'w')
     headline2=['gene symbol','detected clusters NO.','known variants NO.',
-               'PSM count','unique peptides','identified variants','variants ID']
+              'PSM count','unique peptides','identified variants','variants ID']
     output2_handle.write('%s\n'%('\t'.join(headline2)))
-    
-    
+   
+   
     for ECgene in gene_peparray.keys():
         peparray=gene_peparray[ECgene]
         main()
-    
-    print i,"peptides processed"
+
     print 'program finished'
     print output1,'saved'
+    print "Attention!Genomic coordiantes in ECmappingout.txt file are from NCBI36/hg18 assembly"
+    print output2,'saved'

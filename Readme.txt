@@ -165,7 +165,7 @@ EXAMPLE II - Investigation of novel splice variants in your data
 2)Insert gene symbol
   Command: Python converter.py --i Exp1_searchdata.txt --prefix Exp1 --database ECgene
 3)Group PSMs into peptides
-  Command: Python mergepsm.py Exp1
+  Command: Python mergepsm.py --prefix Exp1
 4)Cluster peptides based on quantitative pattern.
   Command: python clusterpeptide.py --i Exp1_pepdata.txt --o Exp1_pepcluster.txt
 5)Map peptides to splice variants in ECgene database and assign genomic coordinates.

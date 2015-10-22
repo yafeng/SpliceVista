@@ -3,13 +3,17 @@ from Bio import SeqIO
 from collections import OrderedDict
 import operator
 
-
 class ISOFORM(object):
-    def __init__(self,id=None,chr=None,strand=None):
+    def __init__(self,id=None,chr=None,strand=None,chr_start=None,chr_end=None,cds_start=None,cds_end=None,exon=None,seq=None):
         self.id=id
         self.strand=strand
         self.chr=chr
-
+        self.seq=seq
+        self.chr_start=chr_start
+        self.chr_end=chr_end
+        self.cds_start=cds_start
+        self.cds_end=cds_end
+        self.exon=exon
 
 class EXON(object):
     def __init__(self,number=0,gene=None,variant=None,chr=None,strand=None,start=0,end=0,length=0,trans_start=0,trans_end=0):

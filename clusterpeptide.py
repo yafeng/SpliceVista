@@ -37,7 +37,7 @@ def main(): #clustering and write output
     
 if __name__=='__main__':
     ################  Default  ################
-    method = 'complete'
+    method = 'average'
     metric = 'correlation'
     t=0.4
     
