@@ -72,7 +72,7 @@ print 'there are',len(genedic),'genes in total'
 
 pepdatafile.close()
 
-url='http://projects.insilico.us.com/SpliceMiner/Batch?';
+url='http://projects.insilico.us/SpliceMiner/Batch?';
 
 variantfile='splicingvar.txt'
 output_file1=open(variantfile,'a') #open the file in appending mode
